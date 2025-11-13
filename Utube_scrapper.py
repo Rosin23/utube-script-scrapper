@@ -10,7 +10,6 @@ from datetime import datetime
 from typing import Optional, Dict, List
 import yt_dlp
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
 
 
 def extract_video_id(url: str) -> Optional[str]:
@@ -108,36 +107,63 @@ def get_transcript_with_timestamps(video_id: str, languages: List[str] = ['ko', 
     Returns:
         타임스탬프와 텍스트를 담은 딕셔너리 리스트
     """
+    # 방법 1: 선호하는 언어들을 한 번에 시도
     try:
-        # 자막 가져오기 (우선순위: 한국어 > 영어 > 기타)
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+        return transcript
+    except Exception:
+        pass
+
+    # 방법 2: 각 언어를 개별적으로 시도
+    for lang in languages:
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[lang])
+            return transcript
+        except Exception:
+            continue
+
+    # 방법 3: 언어 지정 없이 기본 자막 가져오기 시도
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        return transcript
+    except Exception:
+        pass
+
+    # 방법 4: 사용 가능한 모든 자막 목록 가져와서 첫 번째 자막 사용
+    try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
 
         # 수동 생성 자막 우선 시도
         try:
-            transcript = transcript_list.find_manually_created_transcript(languages)
+            for lang in languages:
+                try:
+                    transcript = transcript_list.find_manually_created_transcript([lang])
+                    return transcript.fetch()
+                except:
+                    continue
         except:
-            # 자동 생성 자막 사용
-            try:
-                transcript = transcript_list.find_generated_transcript(languages)
-            except:
-                # 사용 가능한 첫 번째 자막 사용
-                available_transcripts = list(transcript_list)
-                if available_transcripts:
-                    transcript = available_transcripts[0]
-                else:
-                    raise NoTranscriptFound(video_id)
+            pass
 
-        return transcript.fetch()
+        # 자동 생성 자막 시도
+        try:
+            for lang in languages:
+                try:
+                    transcript = transcript_list.find_generated_transcript([lang])
+                    return transcript.fetch()
+                except:
+                    continue
+        except:
+            pass
 
-    except TranscriptsDisabled:
-        print(f"이 비디오는 자막이 비활성화되어 있습니다.")
-        return []
-    except NoTranscriptFound:
-        print(f"이 비디오에 사용 가능한 자막이 없습니다.")
-        return []
+        # 사용 가능한 첫 번째 자막 사용
+        available_transcripts = list(transcript_list)
+        if available_transcripts:
+            return available_transcripts[0].fetch()
     except Exception as e:
         print(f"자막 추출 오류: {e}")
-        return []
+
+    print("이 비디오에 사용 가능한 자막이 없습니다.")
+    return []
 
 
 def create_structured_text(metadata: Dict, transcript: List[Dict], output_file: str):
