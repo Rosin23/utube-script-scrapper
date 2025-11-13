@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
 YouTube Video Scraper with Timestamps
-유튜브 영상의 제목, 설명, 자막(타임스탬프 포함)을 추출하여 구조화된 텍스트 파일로 저장합니다.
+유튜브 영상의 제목, 설명, 자막(타임스탬프 포함)을 추출하여 구조화된 파일로 저장합니다.
+지원 형식: TXT, JSON, XML, Markdown
 """
 
 import sys
 import re
+import json
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import Optional, Dict, List
 import yt_dlp
@@ -288,12 +291,164 @@ def create_structured_text(metadata: Dict, transcript: List[Dict], output_file: 
         sys.exit(1)
 
 
+def create_json_output(metadata: Dict, transcript: List[Dict], output_file: str):
+    """
+    구조화된 JSON 파일을 생성합니다.
+
+    Args:
+        metadata: 비디오 메타데이터
+        transcript: 타임스탬프가 포함된 자막 데이터
+        output_file: 출력 파일 경로
+    """
+    try:
+        # JSON 구조 생성
+        data = {
+            "video_info": {
+                "title": metadata['title'],
+                "channel": metadata['channel'],
+                "upload_date": metadata['upload_date'],
+                "duration": metadata['duration'],
+                "duration_formatted": format_timestamp(metadata['duration']),
+                "view_count": metadata['view_count']
+            },
+            "description": metadata['description'],
+            "transcript": [
+                {
+                    "timestamp": format_timestamp(entry['start']),
+                    "start_seconds": entry['start'],
+                    "duration": entry['duration'],
+                    "text": entry['text'].strip()
+                }
+                for entry in transcript
+            ],
+            "metadata": {
+                "total_entries": len(transcript),
+                "generated_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+        }
+
+        # JSON 파일 저장
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+        print(f"\n✅ JSON 파일이 성공적으로 생성되었습니다: {output_file}")
+
+    except Exception as e:
+        print(f"JSON 파일 생성 오류: {e}")
+        sys.exit(1)
+
+
+def create_xml_output(metadata: Dict, transcript: List[Dict], output_file: str):
+    """
+    구조화된 XML 파일을 생성합니다.
+
+    Args:
+        metadata: 비디오 메타데이터
+        transcript: 타임스탬프가 포함된 자막 데이터
+        output_file: 출력 파일 경로
+    """
+    try:
+        # 루트 엘리먼트 생성
+        root = ET.Element('youtube_transcript')
+
+        # 비디오 정보
+        video_info = ET.SubElement(root, 'video_info')
+        ET.SubElement(video_info, 'title').text = metadata['title']
+        ET.SubElement(video_info, 'channel').text = metadata['channel']
+        ET.SubElement(video_info, 'upload_date').text = metadata['upload_date']
+        ET.SubElement(video_info, 'duration').text = str(metadata['duration'])
+        ET.SubElement(video_info, 'duration_formatted').text = format_timestamp(metadata['duration'])
+        ET.SubElement(video_info, 'view_count').text = str(metadata['view_count'])
+
+        # 설명
+        description = ET.SubElement(root, 'description')
+        description.text = metadata['description']
+
+        # 자막
+        transcript_element = ET.SubElement(root, 'transcript')
+        for entry in transcript:
+            entry_element = ET.SubElement(transcript_element, 'entry')
+            ET.SubElement(entry_element, 'timestamp').text = format_timestamp(entry['start'])
+            ET.SubElement(entry_element, 'start_seconds').text = str(entry['start'])
+            ET.SubElement(entry_element, 'duration').text = str(entry['duration'])
+            ET.SubElement(entry_element, 'text').text = entry['text'].strip()
+
+        # 메타데이터
+        metadata_element = ET.SubElement(root, 'metadata')
+        ET.SubElement(metadata_element, 'total_entries').text = str(len(transcript))
+        ET.SubElement(metadata_element, 'generated_at').text = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # XML 트리 생성 및 저장
+        tree = ET.ElementTree(root)
+        ET.indent(tree, space="  ")  # Pretty print
+        tree.write(output_file, encoding='utf-8', xml_declaration=True)
+
+        print(f"\n✅ XML 파일이 성공적으로 생성되었습니다: {output_file}")
+
+    except Exception as e:
+        print(f"XML 파일 생성 오류: {e}")
+        sys.exit(1)
+
+
+def create_markdown_output(metadata: Dict, transcript: List[Dict], output_file: str):
+    """
+    구조화된 Markdown 파일을 생성합니다.
+
+    Args:
+        metadata: 비디오 메타데이터
+        transcript: 타임스탬프가 포함된 자막 데이터
+        output_file: 출력 파일 경로
+    """
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            # 제목
+            f.write(f"# {metadata['title']}\n\n")
+
+            # 비디오 정보
+            f.write("## 📹 Video Information\n\n")
+            f.write(f"- **Title**: {metadata['title']}\n")
+            f.write(f"- **Channel**: {metadata['channel']}\n")
+            f.write(f"- **Upload Date**: {metadata['upload_date']}\n")
+            f.write(f"- **Duration**: {format_timestamp(metadata['duration'])}\n")
+            f.write(f"- **Views**: {metadata['view_count']:,}\n\n")
+
+            # 설명
+            f.write("## 📝 Description\n\n")
+            f.write(f"{metadata['description']}\n\n")
+
+            # 자막
+            if transcript:
+                f.write("## 📜 Transcript\n\n")
+                f.write("| Timestamp | Text |\n")
+                f.write("|-----------|------|\n")
+
+                for entry in transcript:
+                    timestamp = format_timestamp(entry['start'])
+                    text = entry['text'].strip().replace('\n', ' ').replace('|', '\\|')
+                    f.write(f"| `{timestamp}` | {text} |\n")
+
+                f.write(f"\n**Total transcript entries**: {len(transcript)}\n\n")
+            else:
+                f.write("## 📜 Transcript\n\n")
+                f.write("No transcript available for this video.\n\n")
+
+            # 메타데이터
+            f.write("---\n\n")
+            f.write(f"*Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n")
+
+        print(f"\n✅ Markdown 파일이 성공적으로 생성되었습니다: {output_file}")
+
+    except Exception as e:
+        print(f"Markdown 파일 생성 오류: {e}")
+        sys.exit(1)
+
+
 def main():
     """
     메인 함수
     """
     print("=" * 80)
-    print("YouTube Video Scraper with Timestamps")
+    print("YouTube Video Scraper with Multi-Format Support")
     print("=" * 80)
     print()
 
@@ -306,6 +461,36 @@ def main():
     if not youtube_url:
         print("❌ 오류: URL이 입력되지 않았습니다.")
         sys.exit(1)
+
+    # 출력 형식 선택
+    print("\n📄 출력 형식을 선택하세요:")
+    print("1. TXT  - 구조화된 텍스트 파일")
+    print("2. JSON - JSON 형식")
+    print("3. XML  - XML 형식")
+    print("4. MD   - Markdown 형식")
+    print()
+
+    # 명령줄 인자로 형식이 제공된 경우
+    if len(sys.argv) > 2:
+        format_choice = sys.argv[2]
+    else:
+        format_choice = input("선택 (1-4): ").strip()
+
+    # 형식 매핑
+    format_map = {
+        '1': ('txt', create_structured_text, '텍스트'),
+        '2': ('json', create_json_output, 'JSON'),
+        '3': ('xml', create_xml_output, 'XML'),
+        '4': ('md', create_markdown_output, 'Markdown')
+    }
+
+    if format_choice not in format_map:
+        print("❌ 오류: 올바른 형식을 선택해주세요 (1-4).")
+        sys.exit(1)
+
+    file_extension, format_function, format_name = format_map[format_choice]
+    print(f"\n✓ {format_name} 형식이 선택되었습니다.")
+    print()
 
     # 비디오 ID 추출
     video_id = extract_video_id(youtube_url)
@@ -335,11 +520,11 @@ def main():
     # 출력 파일명 생성
     safe_title = re.sub(r'[^\w\s-]', '', metadata['title'])
     safe_title = re.sub(r'[-\s]+', '_', safe_title)
-    output_file = f"{safe_title[:50]}_{video_id}.txt"
+    output_file = f"{safe_title[:50]}_{video_id}.{file_extension}"
 
     # 파일 생성
-    print("💾 텍스트 파일을 생성하는 중...")
-    create_structured_text(metadata, transcript, output_file)
+    print(f"💾 {format_name} 파일을 생성하는 중...")
+    format_function(metadata, transcript, output_file)
     print()
     print("=" * 80)
     print("✅ 완료!")
