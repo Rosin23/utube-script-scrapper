@@ -117,57 +117,10 @@ Generated on: 2024-01-01 12:00:00
 4. 영어 (en) - 자동 생성 자막
 5. 기타 사용 가능한 첫 번째 자막
 
-## 문제 해결
+## 요구사항
 
-### 패키지 설치 오류
-
-youtube-transcript-api 설치 시 문제가 발생하는 경우:
-
-```bash
-# pip 업그레이드
-pip install --upgrade pip
-
-# 패키지 재설치
-pip install --upgrade yt-dlp youtube-transcript-api
-
-# 또는 특정 버전 설치
-pip install "youtube-transcript-api>=0.6.0" "yt-dlp>=2024.3.10"
-```
-
-### 자막 추출 오류
-
-**증상**: `자막 추출 오류: type object 'YouTubeTranscriptApi' has no attribute 'list_transcripts'`
-
-**해결 방법**:
-1. youtube-transcript-api 패키지를 최신 버전으로 업데이트
-   ```bash
-   pip install --upgrade youtube-transcript-api
-   ```
-
-2. 패키지가 제대로 설치되었는지 확인
-   ```bash
-   pip show youtube-transcript-api
-   ```
-
-**참고**: 개선된 코드는 여러 fallback 방식을 사용하여 대부분의 버전에서 작동합니다.
-
-### 자막이 추출되지 않는 경우
-
-- 해당 비디오에 자막이 활성화되어 있는지 확인하세요.
-- 일부 비디오는 자막이 제공되지 않을 수 있습니다.
-- 이 경우에도 비디오 메타데이터는 정상적으로 저장됩니다.
-- 스크립트는 여러 언어를 자동으로 시도하며, 한국어 → 영어 → 기타 언어 순으로 자막을 검색합니다.
-
-### 네트워크 오류
-
-- 인터넷 연결을 확인하세요.
-- YouTube 서버가 일시적으로 응답하지 않을 수 있습니다. 잠시 후 다시 시도하세요.
-- 방화벽이나 프록시 설정을 확인하세요.
-
-### Python 버전
-
-- Python 3.7 이상이 필요합니다.
-- Python 버전 확인: `python --version` 또는 `python3 --version`
+- Python 3.7 이상
+- 인터넷 연결
 
 ## 라이선스
 
