@@ -17,7 +17,7 @@ YouTube 비디오의 제목, 설명, 자막(타임스탬프 포함)을 추출하
 
 ```bash
 git clone <repository-url>
-cd AI_TA
+cd utube-script-scrapper
 ```
 
 ### 2. 필요한 패키지 설치
