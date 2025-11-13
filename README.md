@@ -16,7 +16,7 @@ YouTube 비디오의 제목, 설명, 자막(타임스탬프 포함)을 추출하
 ### 1. 저장소 클론
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Rosin23/utube-script-scrapper.git
 cd utube-script-scrapper
 ```
 
