@@ -1,2 +1,8 @@
+# Core dependencies
 yt-dlp>=2024.3.10
 youtube-transcript-api>=0.6.2
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-mock>=3.11.0
+pytest-cov>=4.1.0
