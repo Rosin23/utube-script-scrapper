@@ -1,0 +1,16 @@
+{
+      "hooks": {
+        "SessionStart": [
+          {
+            "matcher": "startup",
+            "hooks": [
+              {
+                "type": "command",
+                "command": ".claude/hooks/install_dependencies.sh",
+                "timeout": 300
+              }
+            ]
+          }
+        ]
+      }
+    }
