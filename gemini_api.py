@@ -59,7 +59,7 @@ class GeminiClient:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = 'gemini-2.0-flash-exp',
+        model_name: str = 'gemini-2.5-flash',
         retry_count: int = 3,
         retry_delay: float = 1.0
     ):
@@ -97,7 +97,7 @@ class GeminiClient:
         # 클라이언트 초기화
         try:
             # API 키를 환경변수로 설정 (Client()가 환경변수에서 읽음)
-            os.environ['GOOGLE_API_KEY'] = self.api_key
+            os.environ['GEMINI_API_KEY'] = self.api_key
             self.client = genai.Client()
             logger.info(f"Gemini 클라이언트 초기화 완료 (모델: {self.model_name})")
         except Exception as e:
