@@ -326,12 +326,12 @@ The project follows a phased development approach:
 ### Branch Naming Convention
 
 ```
-feature/<feature-description>-<session-id>
+claude/<feature-description>-<session-id>
 ```
 
 Examples:
-- `feature/phase-2-core-features-01QUjqhTGM1GiY4RQGsY92bk`
-- `feature/add-multi-format-conversion`
+- `claude/phase-2-core-features-01QUjqhTGM1GiY4RQGsY92bk`
+- `claude/add-multi-format-conversion`
 
 
 **IMPORTANT**: Session ID suffix is required for push operations (403 forbidden without it).
@@ -506,9 +506,9 @@ Refactor gemini_api.py to use official Gemini API v1beta style
 
 **Push Operations**:
 ```bash
-# CRITICAL: Branch must start with 'feature/' and end with session ID
+# CRITICAL: Branch must start with 'claude/' and end with session ID
 
-git push -u origin feature/feature-name-SESSION_ID
+git push -u origin claude/feature-name-SESSION_ID
 ```
 
 **Retry Logic** (for network failures):
@@ -526,7 +526,7 @@ git push -u origin feature/feature-name-SESSION_ID
 
 ```bash
 # Create and switch to new branch
-git checkout -b feature/feature-name-SESSION_ID
+git checkout -b claude/feature-name-SESSION_ID
 
 # Stage files
 git add file1.py file2.py
@@ -541,7 +541,7 @@ EOF
 )"
 
 # Push with upstream tracking
-git push -u origin feature/feature-name-SESSION_ID
+git push -u origin claude/feature-name-SESSION_ID
 ```
 
 ---
@@ -913,7 +913,7 @@ Before committing, verify:
 - `youtube_api.py`: 234 lines - YouTube API integration
 - `playlist_handler.py`: 191 lines - Playlist handling (92% coverage)
 
-**Branch**: `feature/phase-2-core-features-01QUjqhTGM1GiY4RQGsY92bk`
+**Branch**: `claude/phase-2-core-features-01QUjqhTGM1GiY4RQGsY92bk`
 
 **Test Coverage**: 46 tests passing for Phase 2 modules
 
