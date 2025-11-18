@@ -4,7 +4,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict, List, Optional
 import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -23,7 +23,15 @@ class Formatter(ABC):
         self.format_name = ""
 
     @abstractmethod
-    def save(self, metadata: Dict, transcript: List[Dict], output_file: str) -> None:
+    def save(
+        self,
+        metadata: Dict,
+        transcript: List[Dict],
+        output_file: str,
+        summary: Optional[str] = None,
+        translation: Optional[str] = None,
+        key_topics: Optional[List[str]] = None
+    ) -> None:
         """
         데이터를 지정된 형식으로 저장합니다.
 
@@ -31,6 +39,9 @@ class Formatter(ABC):
             metadata: 비디오 메타데이터
             transcript: 타임스탬프가 포함된 자막 데이터
             output_file: 출력 파일 경로
+            summary: AI 생성 요약 (선택사항)
+            translation: 번역된 텍스트 (선택사항)
+            key_topics: 핵심 주제 리스트 (선택사항)
         """
         pass
 
@@ -51,7 +62,15 @@ class TxtFormatter(Formatter):
         self.file_extension = "txt"
         self.format_name = "텍스트"
 
-    def save(self, metadata: Dict, transcript: List[Dict], output_file: str) -> None:
+    def save(
+        self,
+        metadata: Dict,
+        transcript: List[Dict],
+        output_file: str,
+        summary: Optional[str] = None,
+        translation: Optional[str] = None,
+        key_topics: Optional[List[str]] = None
+    ) -> None:
         """텍스트 파일로 저장합니다."""
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -75,6 +94,28 @@ class TxtFormatter(Formatter):
                 f.write("-" * 80 + "\n")
                 f.write(f"{metadata['description']}\n")
                 f.write("\n")
+
+                # AI 생성 요약 (있는 경우)
+                if summary:
+                    f.write("🤖 AI Summary\n")
+                    f.write("-" * 80 + "\n")
+                    f.write(f"{summary}\n")
+                    f.write("\n")
+
+                # 핵심 주제 (있는 경우)
+                if key_topics:
+                    f.write("🔑 Key Topics\n")
+                    f.write("-" * 80 + "\n")
+                    for topic in key_topics:
+                        f.write(f"• {topic}\n")
+                    f.write("\n")
+
+                # 번역 (있는 경우)
+                if translation:
+                    f.write("🌐 Translation\n")
+                    f.write("-" * 80 + "\n")
+                    f.write(f"{translation}\n")
+                    f.write("\n")
 
                 # 자막 (타임스탬프 포함)
                 if transcript:
@@ -110,7 +151,15 @@ class JsonFormatter(Formatter):
         self.file_extension = "json"
         self.format_name = "JSON"
 
-    def save(self, metadata: Dict, transcript: List[Dict], output_file: str) -> None:
+    def save(
+        self,
+        metadata: Dict,
+        transcript: List[Dict],
+        output_file: str,
+        summary: Optional[str] = None,
+        translation: Optional[str] = None,
+        key_topics: Optional[List[str]] = None
+    ) -> None:
         """JSON 파일로 저장합니다."""
         try:
             # JSON 구조 생성
@@ -139,6 +188,14 @@ class JsonFormatter(Formatter):
                 }
             }
 
+            # AI 기능 추가
+            if summary:
+                data["ai_summary"] = summary
+            if key_topics:
+                data["key_topics"] = key_topics
+            if translation:
+                data["translation"] = translation
+
             # JSON 파일 저장
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
@@ -157,7 +214,15 @@ class XmlFormatter(Formatter):
         self.file_extension = "xml"
         self.format_name = "XML"
 
-    def save(self, metadata: Dict, transcript: List[Dict], output_file: str) -> None:
+    def save(
+        self,
+        metadata: Dict,
+        transcript: List[Dict],
+        output_file: str,
+        summary: Optional[str] = None,
+        translation: Optional[str] = None,
+        key_topics: Optional[List[str]] = None
+    ) -> None:
         """XML 파일로 저장합니다."""
         try:
             # 루트 엘리먼트 생성
@@ -175,6 +240,21 @@ class XmlFormatter(Formatter):
             # 설명
             description = ET.SubElement(root, 'description')
             description.text = metadata['description']
+
+            # AI 기능 (있는 경우)
+            if summary:
+                ai_summary = ET.SubElement(root, 'ai_summary')
+                ai_summary.text = summary
+
+            if key_topics:
+                topics_element = ET.SubElement(root, 'key_topics')
+                for topic in key_topics:
+                    topic_element = ET.SubElement(topics_element, 'topic')
+                    topic_element.text = topic
+
+            if translation:
+                translation_element = ET.SubElement(root, 'translation')
+                translation_element.text = translation
 
             # 자막
             transcript_element = ET.SubElement(root, 'transcript')
@@ -209,7 +289,15 @@ class MarkdownFormatter(Formatter):
         self.file_extension = "md"
         self.format_name = "Markdown"
 
-    def save(self, metadata: Dict, transcript: List[Dict], output_file: str) -> None:
+    def save(
+        self,
+        metadata: Dict,
+        transcript: List[Dict],
+        output_file: str,
+        summary: Optional[str] = None,
+        translation: Optional[str] = None,
+        key_topics: Optional[List[str]] = None
+    ) -> None:
         """Markdown 파일로 저장합니다."""
         try:
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -227,6 +315,23 @@ class MarkdownFormatter(Formatter):
                 # 설명
                 f.write("## 📝 Description\n\n")
                 f.write(f"{metadata['description']}\n\n")
+
+                # AI 생성 요약 (있는 경우)
+                if summary:
+                    f.write("## 🤖 AI Summary\n\n")
+                    f.write(f"{summary}\n\n")
+
+                # 핵심 주제 (있는 경우)
+                if key_topics:
+                    f.write("## 🔑 Key Topics\n\n")
+                    for topic in key_topics:
+                        f.write(f"- {topic}\n")
+                    f.write("\n")
+
+                # 번역 (있는 경우)
+                if translation:
+                    f.write("## 🌐 Translation\n\n")
+                    f.write(f"{translation}\n\n")
 
                 # 자막
                 if transcript:
