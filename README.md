@@ -15,13 +15,36 @@ YouTube 비디오의 제목, 설명, 자막(타임스탬프 포함)을 추출하
 - 한국어 및 영어 자막 자동 감지
 - 수동 생성 자막 우선 사용, 없을 경우 자동 생성 자막 사용
 
+## 프로젝트 구조
+
+```
+utube-script-scrapper/
+├── main.py                 # 메인 실행 파일 (워크플로우 오케스트레이션)
+├── youtube_api.py          # YouTube API 연동 모듈
+├── formatters.py           # 출력 포맷터 모듈 (전략 패턴)
+├── Utube_scrapper.py       # 레거시 호환용 (하위 호환성 유지)
+├── requirements.txt        # 의존성 패키지 목록
+├── pytest.ini              # pytest 설정 파일
+├── tests/                  # 단위 테스트 디렉토리
+│   ├── __init__.py
+│   ├── test_youtube_api.py
+│   └── test_formatters.py
+└── README.md
+```
+
+### 아키텍처 특징
+
+- **모듈화**: 각 모듈이 단일 책임을 가지도록 설계
+- **전략 패턴**: 출력 포맷터를 쉽게 추가/변경 가능
+- **테스트 커버리지**: pytest를 사용한 포괄적인 단위 테스트
+- **확장성**: 새로운 출력 형식 추가가 용이
+
 ## 설치 방법
 
 ### 1. 저장소 클론
 
 ```bash
 git clone https://github.com/Rosin23/utube-script-scrapper.git
-
 cd utube-script-scrapper
 ```
 
@@ -34,7 +57,11 @@ pip install -r requirements.txt
 또는 개별적으로 설치:
 
 ```bash
+# 핵심 의존성
 pip install yt-dlp youtube-transcript-api
+
+# 테스트 의존성 (개발자용)
+pip install pytest pytest-mock pytest-cov
 ```
 
 ## 사용 방법
@@ -42,7 +69,7 @@ pip install yt-dlp youtube-transcript-api
 ### 방법 1: 대화형 모드 (권장)
 
 ```bash
-python Utube_scrapper.py
+python main.py
 ```
 
 실행 후 프롬프트에서:
@@ -53,29 +80,35 @@ python Utube_scrapper.py
 
 ```bash
 # URL만 전달 (형식은 대화형으로 선택)
-python Utube_scrapper.py "https://www.youtube.com/watch?v=VIDEO_ID"
+python main.py "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # URL과 형식 모두 전달
-python Utube_scrapper.py "https://www.youtube.com/watch?v=VIDEO_ID" 1  # TXT
-python Utube_scrapper.py "https://www.youtube.com/watch?v=VIDEO_ID" 2  # JSON
-python Utube_scrapper.py "https://www.youtube.com/watch?v=VIDEO_ID" 3  # XML
-python Utube_scrapper.py "https://www.youtube.com/watch?v=VIDEO_ID" 4  # MD
+python main.py "https://www.youtube.com/watch?v=VIDEO_ID" 1  # TXT
+python main.py "https://www.youtube.com/watch?v=VIDEO_ID" 2  # JSON
+python main.py "https://www.youtube.com/watch?v=VIDEO_ID" 3  # XML
+python main.py "https://www.youtube.com/watch?v=VIDEO_ID" 4  # MD
+```
+
+### 방법 3: 레거시 스크립트 사용 (하위 호환성)
+
+```bash
+python Utube_scrapper.py "https://www.youtube.com/watch?v=VIDEO_ID" 1
 ```
 
 ## 사용 예시
 
 ```bash
 # 예시 1: 대화형 모드로 실행
-python Utube_scrapper.py
+python main.py
 # → YouTube URL 입력: https://www.youtube.com/watch?v=dQw4w9WgXcQ
 # → 출력 형식 선택: 2 (JSON)
 
 # 예시 2: URL만 전달
-python Utube_scrapper.py "https://youtu.be/dQw4w9WgXcQ"
+python main.py "https://youtu.be/dQw4w9WgXcQ"
 # → 출력 형식 선택: 1 (TXT)
 
 # 예시 3: URL과 형식 모두 전달
-python Utube_scrapper.py "https://youtu.be/dQw4w9WgXcQ" 3
+python main.py "https://youtu.be/dQw4w9WgXcQ" 3
 # → XML 파일 생성
 ```
 
@@ -219,6 +252,74 @@ Views: 1,234,567
 3. 한국어 (ko) - 자동 생성 자막
 4. 영어 (en) - 자동 생성 자막
 5. 기타 사용 가능한 첫 번째 자막
+
+## 테스트
+
+이 프로젝트는 pytest를 사용한 포괄적인 단위 테스트를 포함합니다.
+
+### 테스트 실행
+
+```bash
+# 모든 테스트 실행
+pytest
+
+# 상세한 출력과 함께 실행
+pytest -v
+
+# 커버리지 리포트와 함께 실행
+pytest --cov=. --cov-report=html
+
+# 특정 테스트 파일만 실행
+pytest tests/test_youtube_api.py
+pytest tests/test_formatters.py
+```
+
+### 테스트 구조
+
+- `tests/test_youtube_api.py`: YouTube API 모듈 테스트
+  - URL에서 비디오 ID 추출 테스트
+  - 타임스탬프 형식 변환 테스트
+  - 메타데이터 추출 테스트 (모킹 사용)
+  - 자막 추출 테스트 (모킹 사용)
+
+- `tests/test_formatters.py`: 포맷터 모듈 테스트
+  - 각 포맷터의 초기화 테스트
+  - 파일 생성 및 구조 검증 테스트
+  - 유효한 출력 형식 생성 테스트
+  - 포맷터 팩토리 함수 테스트
+
+## 개발자 가이드
+
+### 새로운 출력 형식 추가하기
+
+전략 패턴 덕분에 새로운 출력 형식을 쉽게 추가할 수 있습니다:
+
+1. `formatters.py`에 새 포맷터 클래스 생성:
+```python
+class SrtFormatter(Formatter):
+    def __init__(self):
+        super().__init__()
+        self.file_extension = "srt"
+        self.format_name = "SRT 자막"
+
+    def save(self, metadata, transcript, output_file):
+        # SRT 형식으로 저장하는 로직 구현
+        pass
+```
+
+2. `get_available_formatters()` 함수에 추가:
+```python
+'5': SrtFormatter()
+```
+
+3. 테스트 작성:
+```python
+# tests/test_formatters.py에 테스트 추가
+class TestSrtFormatter:
+    def test_initialization(self):
+        formatter = SrtFormatter()
+        assert formatter.get_extension() == "srt"
+```
 
 ## 요구사항
 
