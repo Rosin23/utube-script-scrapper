@@ -435,7 +435,7 @@ def is_gemini_available() -> bool:
 
 def get_gemini_client(
     api_key: Optional[str] = None,
-    model_name: str = 'gemini-2.0-flash-exp'
+    model_name: str = 'gemini-2.5-flash'
 ) -> Optional[GeminiClient]:
     """
     Gemini API 클라이언트를 생성합니다.
