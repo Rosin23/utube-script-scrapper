@@ -172,7 +172,7 @@ class TestProcessPlaylistOrVideo:
         assert result['playlist_info']['title'] == 'Test Playlist'
 
     @patch('playlist_handler.PlaylistHandler')
-    @patch('playlist_handler.extract_video_id')
+    @patch('youtube_api.extract_video_id')
     def test_process_single_video(self, mock_extract_id, mock_handler_class):
         """단일 비디오 URL 처리 테스트"""
         mock_handler = Mock()
@@ -189,7 +189,7 @@ class TestProcessPlaylistOrVideo:
         assert result['playlist_info'] is None
 
     @patch('playlist_handler.PlaylistHandler')
-    @patch('playlist_handler.extract_video_id')
+    @patch('youtube_api.extract_video_id')
     def test_process_unknown_url(self, mock_extract_id, mock_handler_class):
         """잘못된 URL 처리 테스트"""
         mock_handler = Mock()
