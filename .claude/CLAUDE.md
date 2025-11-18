@@ -333,6 +333,7 @@ Examples:
 - `feature/phase-2-core-features-01QUjqhTGM1GiY4RQGsY92bk`
 - `feature/add-multi-format-conversion`
 
+
 **IMPORTANT**: Session ID suffix is required for push operations (403 forbidden without it).
 
 ### Development Steps
@@ -506,6 +507,7 @@ Refactor gemini_api.py to use official Gemini API v1beta style
 **Push Operations**:
 ```bash
 # CRITICAL: Branch must start with 'feature/' and end with session ID
+
 git push -u origin feature/feature-name-SESSION_ID
 ```
 
