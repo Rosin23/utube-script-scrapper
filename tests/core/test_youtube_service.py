@@ -102,31 +102,35 @@ class TestYouTubeService:
             "https://www.youtube.com/watch?v=test123"
         )
 
-    @patch.object(YouTubeService, 'playlist_handler')
-    def test_get_playlist_info_success(self, mock_handler):
+    @patch('core.youtube_service.PlaylistHandler')
+    def test_get_playlist_info_success(self, mock_handler_class):
         """플레이리스트 정보 가져오기 성공 테스트"""
+        mock_handler = Mock()
         mock_handler.get_playlist_info.return_value = {
             'title': 'Test Playlist',
             'video_count': 10
         }
-        service = YouTubeService()
+        mock_handler_class.return_value = mock_handler
 
+        service = YouTubeService()
         info = service.get_playlist_info("https://www.youtube.com/playlist?list=PLtest")
 
         assert info is not None
         assert info['title'] == 'Test Playlist'
         assert info['video_count'] == 10
 
-    @patch.object(YouTubeService, 'playlist_handler')
-    def test_get_playlist_videos_success(self, mock_handler):
+    @patch('core.youtube_service.PlaylistHandler')
+    def test_get_playlist_videos_success(self, mock_handler_class):
         """플레이리스트 비디오 목록 가져오기 성공 테스트"""
+        mock_handler = Mock()
         mock_handler.get_video_urls_from_playlist.return_value = [
             {'id': 'video1', 'url': 'url1', 'title': 'Video 1'},
             {'id': 'video2', 'url': 'url2', 'title': 'Video 2'},
             {'id': 'video3', 'url': 'url3', 'title': 'Video 3'},
         ]
-        service = YouTubeService()
+        mock_handler_class.return_value = mock_handler
 
+        service = YouTubeService()
         videos = service.get_playlist_videos(
             "https://www.youtube.com/playlist?list=PLtest",
             max_videos=2

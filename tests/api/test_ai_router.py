@@ -87,3 +87,106 @@ class TestAIRouter:
         data = response.json()
         assert "topics" in data
         assert len(data["topics"]) == 2
+
+    @patch('api.routers.ai.AIService')
+    def test_generate_summary_service_unavailable(self, mock_service_class):
+        """AI 서비스 사용 불가능 시 요약 실패 테스트"""
+        mock_service = Mock()
+        mock_service.is_available.return_value = False
+        mock_service_class.return_value = mock_service
+
+        response = client.post(
+            "/ai/summary",
+            json={
+                "text": "Text to summarize",
+                "max_points": 3
+            }
+        )
+
+        assert response.status_code == 503
+
+    @patch('api.routers.ai.AIService')
+    def test_translate_text_service_unavailable(self, mock_service_class):
+        """AI 서비스 사용 불가능 시 번역 실패 테스트"""
+        mock_service = Mock()
+        mock_service.is_available.return_value = False
+        mock_service_class.return_value = mock_service
+
+        response = client.post(
+            "/ai/translate",
+            json={
+                "text": "Text to translate",
+                "target_language": "ko"
+            }
+        )
+
+        assert response.status_code == 503
+
+    @patch('api.routers.ai.AIService')
+    def test_extract_topics_service_unavailable(self, mock_service_class):
+        """AI 서비스 사용 불가능 시 주제 추출 실패 테스트"""
+        mock_service = Mock()
+        mock_service.is_available.return_value = False
+        mock_service_class.return_value = mock_service
+
+        response = client.post(
+            "/ai/topics",
+            json={
+                "text": "Text to analyze",
+                "num_topics": 3
+            }
+        )
+
+        assert response.status_code == 503
+
+    @patch('api.routers.ai.AIService')
+    def test_enhance_text_all_features(self, mock_service_class):
+        """모든 AI 기능 적용 테스트"""
+        mock_service = Mock()
+        mock_service.is_available.return_value = True
+
+        # enhance_transcript 메서드의 반환값 설정
+        mock_service.enhance_transcript.return_value = {
+            'summary': "Test summary",
+            'translation': "Translated text",
+            'topics': ["Topic 1", "Topic 2"],
+            'processing_time': 1.5
+        }
+        mock_service_class.return_value = mock_service
+
+        response = client.post(
+            "/ai/enhance",
+            json={
+                "text": "Text to enhance",
+                "enable_summary": True,
+                "summary_max_points": 3,
+                "enable_translation": True,
+                "target_language": "ko",
+                "enable_topics": True,
+                "num_topics": 2
+            }
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["summary"] == "Test summary"
+        assert data["translation"] == "Translated text"
+        assert len(data["topics"]) == 2
+        assert "processing_time" in data
+
+    @patch('api.routers.ai.AIService')
+    def test_enhance_text_service_unavailable(self, mock_service_class):
+        """AI 서비스 사용 불가능 시 향상 실패 테스트"""
+        mock_service = Mock()
+        mock_service.is_available.return_value = False
+        mock_service_class.return_value = mock_service
+
+        response = client.post(
+            "/ai/enhance",
+            json={
+                "text": "Text to enhance",
+                "enable_summary": True
+            }
+        )
+
+        assert response.status_code == 503
