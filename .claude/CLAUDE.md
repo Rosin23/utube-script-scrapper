@@ -264,7 +264,7 @@ from google.genai import types
 
 client = genai.Client()
 response = client.models.generate_content(
-    model="gemini-2.0-flash-exp",
+    model="gemini-2.5-flash",
     contents=prompt,
     config=types.GenerateContentConfig(temperature=0.7)
 )
