@@ -1,589 +1,631 @@
-# YouTube Scraper with Timestamps & AI Enhancement (Phase 2)
+# YouTube Script Scraper API
 
-YouTube 비디오/재생목록의 제목, 설명, 자막(타임스탬프 포함)을 추출하여 구조화된 파일로 저장하는 Python 스크립트입니다.
+<div align="center">
 
-## 새로운 기능 (Phase 2) 🚀
+**A modern FastAPI-based YouTube video/playlist scraper with AI-powered enhancements**
 
-- **🎬 재생목록 지원**: 재생목록 URL을 입력하면 모든 비디오를 자동으로 처리
-- **🤖 AI 요약**: Gemini API를 활용한 자동 스크립트 요약
-- **🌐 다국어 번역**: AI 기반 자막 번역
-- **🔑 핵심 주제 추출**: 비디오의 주요 토픽 자동 추출
-- **🌍 다국어 자막 지원**: 사용자 지정 언어 우선순위 설정
+[![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-00a393.svg)](https://fastapi.tiangolo.com)
+[![Test Coverage](https://img.shields.io/badge/coverage-81%25-brightgreen.svg)](https://github.com/Rosin23/utube-script-scrapper)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+[Features](#features) •
+[Quick Start](#quick-start) •
+[API Documentation](#api-documentation) •
+[Usage Examples](#usage-examples) •
+[Contributing](#contributing)
 
-<details>
-<summary>Phase 2 result</summary>
+</div>
 
-```json
-{
-  "video_info": {
-    "title": "상세페이지 제작만 300개 해본 디자이너가 알려주는 피그마로 상세페이지 만드는법 l 포토샵 일러스트 못해도 됩니다.",
-    "channel": "리디드로우",
-    "upload_date": "20240618",
-    "duration": 548,
-    "duration_formatted": "09:08",
-    "view_count": 133523
-  },
-  "description": "여러분 아직도 상세페이지 제작 어려우신가요?\n사실 상세페이지는 이미지 위치나 컬러만 다르게 변경하는거지\n기본적인 틀은 다 비슷해요.\n그렇다보니 가장 처음에 제작할때 제대로만 해둔다면\n그 다음부터는 정말 수월한데요.\n이 모든게 피그마를 알아야 가능하다는 사실!\n제가 알려드리는 이 방법으로\n하루에 10개까지도 제작 가능하니\n오늘 영상도 재미있게 시청해주세요!\n\n상세페이지 제작만 300개 해본 디자이너가 알려주는 피그마로 상세페이지 만드는법 l 포토샵 일러스트 못해도 됩니다.",
-  "transcript": [
-    {
-      "timestamp": "00:00",
-      "start_seconds": 0.16,
-      "duration": 4.44,
-      "text": "여기서 상세 페이지 검색해 보시면"
-    },
-    {
-      "timestamp": "00:02",
-      "start_seconds": 2.32,
-      "duration": 4.439,
-      "text": "같은 디자인 많이 보이죠이 디자인들"
-    },....
-  ]
+---
 
-  "metadata": {
-    "total_entries": 220,
-    "generated_at": "2025-11-18 16:24:40"
-  },
-  "ai_summary": "다음은 YouTube 비디오 스크립트의 5가지 핵심 포인트입니다.\n\n1.  **상세 페이지 디자인의 유사성 및 쉬운 제작 가능성:** 대부분의 상세 페이지 디자인은 기본적인 레이아웃 구조가 비슷하므로, 디자인 경험이 없어도 고품질의 상세 페이지를 쉽게 제작할 수 있습니다.\n2.  **Figma 활용 및 시간 절약:** Figma를 활용하여 재사용 가능한 상세 페이지 기본 구조를 한 번 만들어두면, 디자인에 뺏길 시간 없이 상품 기획에만 집중하여 작업 시간을 크게 절약할 수 있습니다.\n3.  **구글 시트 연동을 통한 빠른 콘텐츠 업데이트:** Figma 레이어명에 샵(#)을 붙여 구글 시트와 연동하면, 텍스트와 이미지 링크를 구글 시트에서 변경하여 상세 페이지 내용을 쉽고 빠르게 업데이트할 수 있습니다.\n4.  **초보 셀러 및 위탁 판매자를 위한 비용 절감:** 이 방법은 특히 위탁 판매자나 디자인에 어려움을 겪는 초보 셀러에게 매우 유용하며, 상세 페이지 디자인 외주 비용(50~100만원)을 절감할 수 있습니다.\n5.  **기획 집중 및 다양한 페이지 제작 역량 강화:** 디자인에 소모되는 시간을 줄이고 상품 기획에 집중하며, 만들어둔 기본 구조를 활용하여 다양한 형식의 상세 페이지를 직접 만들고 수정할 수 있는 역량을 갖추게 됩니다."
-}
+## 🎯 Overview
+
+YouTube Script Scraper API is a **production-ready RESTful API** that extracts video metadata, transcripts, and descriptions from YouTube videos and playlists. Built with **FastAPI** and following modern architectural patterns, it provides:
+
+- 🚀 **High-performance async API** with automatic OpenAPI documentation
+- 🤖 **AI-powered features** using Google's Gemini API (summarization, translation, topic extraction)
+- 🛠️ **Agent-friendly tools** compatible with Claude Code, OpenAI, LangChain, and other AI frameworks
+- 📦 **Multiple output formats** (JSON, TXT, XML, Markdown)
+- 🎬 **Playlist support** with batch processing
+- 🌍 **Multi-language subtitle support** with customizable priorities
+- ✅ **81% test coverage** with comprehensive unit and integration tests
+
+---
+
+## ✨ Features
+
+### Core API Features
+
+| Feature | Description |
+|---------|-------------|
+| **Video Metadata Extraction** | Title, channel, upload date, duration, views, description |
+| **Transcript Retrieval** | Timestamped subtitles with fallback language support |
+| **Playlist Processing** | Automatic detection and batch processing of playlists |
+| **Multi-format Output** | JSON, TXT, XML, Markdown with consistent structure |
+
+### AI-Powered Enhancements (Optional)
+
+| Feature | Description |
+|---------|-------------|
+| **🤖 Smart Summarization** | Gemini API-powered content summaries (1-10 key points) |
+| **🌐 Translation** | Automatic transcript translation to any language |
+| **🔑 Topic Extraction** | AI-identified key topics and themes |
+| **⚡ Batch Enhancement** | Apply all AI features in a single request |
+
+### Developer Features
+
+| Feature | Description |
+|---------|-------------|
+| **OpenAPI/Swagger UI** | Interactive API documentation at `/docs` |
+| **Dependency Injection** | Clean, testable FastAPI architecture |
+| **Agent Tool Schemas** | OpenAI function calling compatible schemas |
+| **CORS Support** | Configurable cross-origin resource sharing |
+| **Health Checks** | Monitor API and AI service status |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Python 3.11+**
+- **pip** (Python package manager)
+- **Gemini API Key** (optional, for AI features)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Rosin23/utube-script-scrapper.git
+   cd utube-script-scrapper
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Set up environment variables** (optional, for AI features)
+   ```bash
+   # Create .env file
+   echo "GEMINI_API_KEY=your-api-key-here" > .env
+
+   # Or export directly
+   export GEMINI_API_KEY="your-api-key-here"
+   ```
+
+4. **Start the API server**
+   ```bash
+   python api_main.py
+   ```
+
+   The API will be available at: **http://localhost:8000**
+
+### Verify Installation
+
+Open your browser and navigate to:
+- **Interactive API Docs**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
+
+---
+
+## 📖 API Documentation
+
+### Base URL
 
 ```
-</details>
+http://localhost:8000
+```
 
-## 기능
+### Authentication
 
-### 기본 기능
-- YouTube 비디오 메타데이터 추출 (제목, 채널명, 업로드 날짜, 조회수 등)
-- 비디오 설명(Description) 추출
-- 자막/스크립트 추출 (타임스탬프 포함)
-- **다중 출력 형식 지원**:
-  - **TXT** - 구조화된 텍스트 파일
-  - **JSON** - 프로그래밍 친화적인 JSON 형식
-  - **XML** - 구조화된 XML 형식
-  - **Markdown** - 가독성 높은 마크다운 형식
+No authentication required for basic features. AI features require a valid Gemini API key configured via environment variables.
 
-### Phase 2 고급 기능
-- **재생목록 처리**: URL이 재생목록이면 모든 비디오를 순차 처리
-- **AI 요약**: Gemini API로 비디오 내용을 핵심 포인트로 요약
-- **번역**: 자막을 다른 언어로 자동 번역
-- **주제 추출**: 비디오의 핵심 주제 자동 추출
-- **사용자 지정 언어**: 선호하는 자막 언어 우선순위 설정
+### Endpoints Overview
 
-## 프로젝트 구조
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/video/info` | POST | Get video metadata and transcript |
+| `/video/scrape` | POST | Scrape video with AI enhancements |
+| `/video/metadata` | GET | Get metadata only |
+| `/video/transcript` | GET | Get transcript only |
+| `/playlist/info` | POST | Get playlist info and videos |
+| `/playlist/check` | GET | Check if URL is a playlist |
+| `/playlist/videos` | GET | Get playlist videos list |
+| `/ai/summary` | POST | Generate text summary |
+| `/ai/translate` | POST | Translate text |
+| `/ai/topics` | POST | Extract topics |
+| `/ai/enhance` | POST | Apply all AI features |
+| `/ai/health` | GET | Check AI service status |
+| `/tools/schemas` | GET | Get agent tool schemas |
+
+### Quick Examples
+
+#### Get Video Information
+
+```bash
+curl -X POST "http://localhost:8000/video/info" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "languages": ["ko", "en"],
+    "prefer_manual": true
+  }'
+```
+
+#### Scrape with AI Enhancement
+
+```bash
+curl -X POST "http://localhost:8000/video/scrape" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "enable_summary": true,
+    "summary_max_points": 5,
+    "enable_translation": true,
+    "target_language": "en",
+    "enable_topics": true,
+    "num_topics": 5,
+    "output_format": "json"
+  }'
+```
+
+#### Get Playlist Information
+
+```bash
+curl -X POST "http://localhost:8000/playlist/info" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "playlist_url": "https://www.youtube.com/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf",
+    "max_videos": 10
+  }'
+```
+
+For complete API documentation, visit: **http://localhost:8000/docs**
+
+---
+
+## 💡 Usage Examples
+
+### Example 1: Educational Content Analysis
+
+Extract and summarize lecture videos from a playlist:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/playlist/info",
+    json={
+        "playlist_url": "https://www.youtube.com/playlist?list=PLEducation123",
+        "max_videos": 10
+    }
+)
+
+for video in response.json()["videos"]:
+    # Scrape each video with AI summary
+    video_response = requests.post(
+        "http://localhost:8000/video/scrape",
+        json={
+            "video_url": video["url"],
+            "enable_summary": True,
+            "summary_max_points": 5,
+            "output_format": "markdown"
+        }
+    )
+    print(video_response.json()["summary"])
+```
+
+### Example 2: Multi-language Translation
+
+Translate Korean video content to English:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/video/scrape",
+    json={
+        "video_url": "https://www.youtube.com/watch?v=KoreanVideo",
+        "languages": ["ko"],
+        "enable_translation": True,
+        "target_language": "en",
+        "output_format": "json"
+    }
+)
+
+translation = response.json()["translation"]
+print(translation)
+```
+
+### Example 3: Topic Analysis
+
+Analyze video content for key topics:
+
+```python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/ai/topics",
+    json={
+        "text": "Long video transcript text...",
+        "num_topics": 10,
+        "language": "en"
+    }
+)
+
+topics = response.json()["topics"]
+for topic in topics:
+    print(f"• {topic}")
+```
+
+### Example 4: Using with AI Agent Frameworks
+
+#### OpenAI Function Calling
+
+```python
+import openai
+import requests
+
+# Get tool schemas
+response = requests.get("http://localhost:8000/tools/schemas")
+tools = response.json()["tools"]
+
+# Use with OpenAI
+completion = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Scrape this YouTube video..."}],
+    tools=tools
+)
+```
+
+#### Claude Code
+
+Claude Code can directly interact with the API endpoints using the tool schemas.
+
+---
+
+## 🏗️ Architecture
+
+### Project Structure
 
 ```
 utube-script-scrapper/
-├── main.py                      # 메인 실행 파일 (Phase 2 통합)
-├── youtube_api.py               # YouTube API 연동 모듈
-├── formatters.py                # 출력 포맷터 모듈 (전략 패턴)
-├── playlist_handler.py          # 재생목록 처리 모듈 (NEW)
-├── gemini_api.py                # Gemini API 연동 모듈 (NEW)
-├── Utube_scrapper.py            # 레거시 호환용
-├── requirements.txt             # 의존성 패키지 목록
-├── pytest.ini                   # pytest 설정 파일
-├── tests/                       # 단위 테스트 디렉토리
-│   ├── __init__.py
-│   ├── test_youtube_api.py
-│   ├── test_formatters.py
-│   ├── test_playlist_handler.py # NEW
-│   └── test_gemini_api.py       # NEW
-└── README.md
+├── api_main.py                      # FastAPI application entry point
+├── api/                             # API layer
+│   ├── routers/                     # FastAPI routers
+│   │   ├── video.py                 # Video endpoints
+│   │   ├── playlist.py              # Playlist endpoints
+│   │   └── ai.py                    # AI endpoints
+│   └── schemas/                     # Pydantic v2 models
+│       ├── video.py                 # Video schemas
+│       ├── playlist.py              # Playlist schemas
+│       └── ai.py                    # AI schemas
+├── core/                            # Business logic layer
+│   ├── youtube_service.py           # YouTube data service
+│   ├── ai_service.py                # AI service (Gemini)
+│   └── formatter_service.py         # Output formatting
+├── tools/                           # Agent-friendly tools
+│   ├── video_scraper.py             # Video scraping tool
+│   ├── summarizer.py                # Summarization tool
+│   ├── translator.py                # Translation tool
+│   └── topic_extractor.py           # Topic extraction tool
+├── utils/                           # Utilities
+│   ├── config.py                    # Settings management
+│   └── dependencies.py              # FastAPI dependencies
+├── tests/                           # Comprehensive tests (81% coverage)
+│   ├── api/                         # API endpoint tests
+│   ├── core/                        # Service layer tests
+│   └── tools/                       # Tool tests
+├── requirements.txt                 # Python dependencies
+└── README.md                        # This file
 ```
 
-### 아키텍처 특징
+### Design Patterns
 
-- **모듈화**: 각 모듈이 단일 책임을 가지도록 설계 (SRP)
-- **전략 패턴**: 출력 포맷터를 쉽게 추가/변경 가능
-- **의존성 주입**: 느슨한 결합으로 테스트와 확장 용이
-- **테스트 커버리지**: pytest를 사용한 포괄적인 단위 테스트
-- **확장성**: 새로운 기능 추가가 용이한 구조
+- **Layered Architecture**: Clear separation between API, business logic, and tools
+- **Dependency Injection**: FastAPI's dependency system for loose coupling
+- **Strategy Pattern**: Pluggable formatters for different output formats
+- **Service Layer**: Reusable business logic across API and CLI
+- **Factory Pattern**: Tool creation and schema generation
 
-## 설치 방법
+### Technology Stack
 
-### 1. 저장소 클론
+| Component | Technology |
+|-----------|-----------|
+| **Web Framework** | FastAPI 0.109+ |
+| **ASGI Server** | Uvicorn |
+| **Data Validation** | Pydantic v2 |
+| **YouTube API** | yt-dlp, youtube-transcript-api |
+| **AI Integration** | google-generativeai (Gemini) |
+| **Testing** | pytest, pytest-cov, httpx |
+| **Python Version** | 3.11+ |
+
+---
+
+## 🧪 Testing
+
+The project maintains **81% test coverage** with comprehensive unit and integration tests.
+
+### Run Tests
 
 ```bash
-git clone https://github.com/Rosin23/utube-script-scrapper.git
-cd utube-script-scrapper
+# Run all tests
+python -m pytest tests/ -v
+
+# Run with coverage report
+python -m pytest tests/ -v --cov=api --cov=core --cov=tools --cov=api_main --cov-report=term-missing
+
+# Run specific test file
+python -m pytest tests/api/test_video_router.py -v
+
+# Generate HTML coverage report
+python -m pytest tests/ --cov=api --cov=core --cov=tools --cov-report=html
 ```
 
-### 2. 필요한 패키지 설치
-
-```bash
-pip install -r requirements.txt
-```
-
-또는 개별적으로 설치:
-
-```bash
-# 핵심 의존성
-pip install yt-dlp youtube-transcript-api
-
-# AI 기능 (선택사항)
-pip install google-generativeai
-
-# 테스트 의존성 (개발자용)
-pip install pytest pytest-mock pytest-cov
-```
-
-### 3. Gemini API 설정 (AI 기능 사용 시)
-
-AI 요약, 번역, 주제 추출 기능을 사용하려면 Gemini API 키가 필요합니다.
-
-1. [Google AI Studio](https://makersuite.google.com/app/apikey)에서 API 키 발급
-2. 환경변수 설정:
-
-```bash
-# Linux/Mac
-export GEMINI_API_KEY="your-api-key-here"
-
-# Windows (PowerShell)
-$env:GEMINI_API_KEY="your-api-key-here"
-
-# Windows (CMD)
-set GEMINI_API_KEY=your-api-key-here
-```
-
-또는 `.bashrc`, `.zshrc` 등에 추가하여 영구 설정:
-
-```bash
-echo 'export GEMINI_API_KEY="your-api-key-here"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-## 사용 방법
-
-### 방법 1: 기본 사용 (단일 비디오)
-
-```bash
-# 대화형 모드
-python main.py
-
-# URL과 함께 실행
-python main.py "https://www.youtube.com/watch?v=VIDEO_ID"
-
-# 출력 형식까지 지정
-python main.py "https://www.youtube.com/watch?v=VIDEO_ID" --format 2
-```
-
-### 방법 2: 재생목록 처리
-
-```bash
-# 재생목록 전체 처리
-python main.py "https://www.youtube.com/playlist?list=PLAYLIST_ID"
-
-# 처리할 비디오 수 제한 (처음 5개만)
-python main.py "PLAYLIST_URL" --max-videos 5
-```
-
-### 방법 3: AI 기능 사용
-
-```bash
-# AI 요약 생성
-python main.py "VIDEO_URL" --summary
-
-# 영어로 번역
-python main.py "VIDEO_URL" --translate en
-
-# 핵심 주제 5개 추출
-python main.py "VIDEO_URL" --topics 5
-
-# 모든 AI 기능 사용
-python main.py "VIDEO_URL" --summary --translate en --topics 5
-```
-
-### 방법 4: 자막 언어 지정
-
-```bash
-# 한국어 우선, 영어 차선
-python main.py "VIDEO_URL" --lang ko en
-
-# 일본어 우선
-python main.py "VIDEO_URL" --lang ja
-
-# 영어와 스페인어
-python main.py "VIDEO_URL" --lang en es
-```
-
-### 방법 5: 종합 예제
-
-```bash
-# 재생목록의 처음 3개 비디오를 JSON으로 저장하고, AI 요약 및 영어 번역 포함
-python main.py "https://www.youtube.com/playlist?list=PLAYLIST_ID" \
-  --format 2 \
-  --max-videos 3 \
-  --summary \
-  --translate en \
-  --topics 3 \
-  --lang ko en
-```
-
-## 명령줄 옵션
+### Test Structure
 
 ```
-usage: main.py [-h] [--lang LANG [LANG ...]] [--summary] [--translate LANG]
-               [--topics N] [--format {1,2,3,4}] [--max-videos N]
-               [url] [format_choice]
-
-YouTube 비디오/재생목록 스크래퍼 with AI 요약 및 번역
-
-positional arguments:
-  url                   YouTube 비디오 또는 재생목록 URL
-  format_choice         출력 형식 (1: TXT, 2: JSON, 3: XML, 4: Markdown)
-
-optional arguments:
-  -h, --help            도움말 메시지 표시
-  --lang LANG [LANG ...]
-                        자막 언어 우선순위 (기본값: ko en)
-  --summary             Gemini API를 사용한 AI 요약 생성
-  --translate LANG      자막을 지정된 언어로 번역 (예: en, ja, zh)
-  --topics N            핵심 주제 N개 추출
-  --format {1,2,3,4}    출력 형식 (1: TXT, 2: JSON, 3: XML, 4: Markdown)
-  --max-videos N        재생목록에서 처리할 최대 비디오 수 (기본값: 전체)
+tests/
+├── api/                             # API endpoint tests (27 tests)
+│   ├── test_main.py                 # Main API tests
+│   ├── test_video_router.py         # Video router tests
+│   ├── test_playlist_router.py      # Playlist router tests
+│   └── test_ai_router.py            # AI router tests
+├── core/                            # Service layer tests (21 tests)
+│   ├── test_youtube_service.py      # YouTube service tests
+│   ├── test_ai_service.py           # AI service tests
+│   └── test_formatter_service.py    # Formatter tests
+└── tools/                           # Tool tests (29 tests)
+    ├── test_video_scraper.py        # Video scraper tests
+    ├── test_summarizer.py           # Summarizer tests
+    ├── test_translator.py           # Translator tests
+    └── test_topic_extractor.py      # Topic extractor tests
 ```
 
-## 출력 파일 형식
+---
 
-### 1. TXT 형식 (구조화된 텍스트)
+## 🔧 Configuration
 
-```
-================================================================================
-YouTube Video Transcript
-================================================================================
+### Environment Variables
 
-📹 Video Information
---------------------------------------------------------------------------------
-Title: 비디오 제목
-Channel: 채널명
-Upload Date: 20240101
-Duration: 10:30
-Views: 1,234,567
+Create a `.env` file in the project root:
 
-📝 Description
---------------------------------------------------------------------------------
-비디오 설명 내용...
+```env
+# AI Features (Optional)
+GEMINI_API_KEY=your-api-key-here
+GEMINI_MODEL_NAME=gemini-2.0-flash-exp
 
-🤖 AI Summary (새로운 기능!)
---------------------------------------------------------------------------------
-1. 첫 번째 핵심 포인트
-2. 두 번째 핵심 포인트
-3. 세 번째 핵심 포인트
+# API Server
+API_HOST=0.0.0.0
+API_PORT=8000
 
-🔑 Key Topics (새로운 기능!)
---------------------------------------------------------------------------------
-• 주제 1
-• 주제 2
-• 주제 3
+# Logging
+LOG_LEVEL=INFO
 
-🌐 Translation (새로운 기능!)
---------------------------------------------------------------------------------
-번역된 전체 내용...
-
-📜 Transcript with Timestamps
-================================================================================
-
-[00:00] 첫 번째 자막 내용
-[00:15] 두 번째 자막 내용
-[01:30] 세 번째 자막 내용
-...
+# CORS (Optional)
+CORS_ORIGINS=["http://localhost:3000", "http://localhost:8000"]
+CORS_ALLOW_CREDENTIALS=true
+CORS_ALLOW_METHODS=["*"]
+CORS_ALLOW_HEADERS=["*"]
 ```
 
-### 2. JSON 형식
+### Get Gemini API Key
+
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the key and add it to your `.env` file
+
+---
+
+## 📊 Response Formats
+
+### Video Information Response
 
 ```json
 {
-  "video_info": {
-    "title": "비디오 제목",
-    "channel": "채널명",
-    "upload_date": "20240101",
-    "duration": 630,
-    "duration_formatted": "10:30",
-    "view_count": 1234567
+  "metadata": {
+    "video_id": "dQw4w9WgXcQ",
+    "title": "Sample Video Title",
+    "channel": "Sample Channel",
+    "upload_date": "20230101",
+    "duration": 212,
+    "view_count": 1000000,
+    "like_count": 50000,
+    "description": "Video description...",
+    "thumbnail_url": "https://i.ytimg.com/vi/..."
   },
-  "description": "비디오 설명 내용...",
-  "ai_summary": "1. 첫 번째 요약\n2. 두 번째 요약...",
-  "key_topics": ["주제1", "주제2", "주제3"],
-  "translation": "번역된 전체 내용...",
   "transcript": [
     {
-      "timestamp": "00:00",
-      "start_seconds": 0.0,
-      "duration": 2.5,
-      "text": "첫 번째 자막 내용"
+      "start": 0.0,
+      "duration": 3.5,
+      "text": "Hello and welcome",
+      "timestamp": "00:00:00"
     }
   ],
-  "metadata": {
-    "total_entries": 150,
-    "generated_at": "2024-01-01 12:00:00"
-  }
+  "transcript_language": "en"
 }
 ```
 
-### 3. XML 형식
+### Scrape with AI Response
 
-```xml
-<?xml version='1.0' encoding='utf-8'?>
-<youtube_transcript>
-  <video_info>
-    <title>비디오 제목</title>
-    <channel>채널명</channel>
-    <upload_date>20240101</upload_date>
-    <duration>630</duration>
-    <duration_formatted>10:30</duration_formatted>
-    <view_count>1234567</view_count>
-  </video_info>
-  <description>비디오 설명 내용...</description>
-  <ai_summary>AI 생성 요약...</ai_summary>
-  <key_topics>
-    <topic>주제 1</topic>
-    <topic>주제 2</topic>
-  </key_topics>
-  <translation>번역된 내용...</translation>
-  <transcript>
-    <entry>
-      <timestamp>00:00</timestamp>
-      <start_seconds>0.0</start_seconds>
-      <duration>2.5</duration>
-      <text>첫 번째 자막 내용</text>
-    </entry>
-  </transcript>
-</youtube_transcript>
+```json
+{
+  "metadata": { ... },
+  "transcript": [ ... ],
+  "transcript_language": "en",
+  "summary": "1. First key point\n2. Second key point\n3. Third key point",
+  "translation": "Translated full text...",
+  "key_topics": ["Topic 1", "Topic 2", "Topic 3"],
+  "output_file": "output/Video_Title.json"
+}
 ```
 
-### 4. Markdown 형식
+### Playlist Response
 
-```markdown
-# 비디오 제목
-
-## 📹 Video Information
-
-- **Title**: 비디오 제목
-- **Channel**: 채널명
-- **Upload Date**: 20240101
-- **Duration**: 10:30
-- **Views**: 1,234,567
-
-## 📝 Description
-
-비디오 설명 내용...
-
-## 🤖 AI Summary
-
-1. 첫 번째 핵심 포인트
-2. 두 번째 핵심 포인트
-
-## 🔑 Key Topics
-
-- 주제 1
-- 주제 2
-- 주제 3
-
-## 🌐 Translation
-
-번역된 전체 내용...
-
-## 📜 Transcript
-
-| Timestamp | Text |
-|-----------|------|
-| `00:00` | 첫 번째 자막 내용 |
-| `00:15` | 두 번째 자막 내용 |
+```json
+{
+  "playlist_info": {
+    "playlist_id": "PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf",
+    "title": "Sample Playlist",
+    "uploader": "Channel Name",
+    "video_count": 50,
+    "description": "Playlist description"
+  },
+  "videos": [
+    {
+      "video_id": "dQw4w9WgXcQ",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "title": "Video Title",
+      "index": 1
+    }
+  ],
+  "total_videos": 50,
+  "returned_videos": 10
+}
 ```
 
-## 출력 파일명
+---
 
-출력 파일은 다음과 같은 형식으로 자동 생성됩니다:
-```
-{비디오_제목}_{비디오_ID}.{확장자}
-```
+## 🤝 Contributing
 
-예시:
-- `My_Awesome_Video_dQw4w9WgXcQ.txt`
-- `My_Awesome_Video_dQw4w9WgXcQ.json`
-- `My_Awesome_Video_dQw4w9WgXcQ.xml`
-- `My_Awesome_Video_dQw4w9WgXcQ.md`
+Contributions are welcome! Please follow these guidelines:
 
-## 지원하는 URL 형식
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
 
-### 단일 비디오
-- `https://www.youtube.com/watch?v=VIDEO_ID`
-- `https://youtu.be/VIDEO_ID`
-- `https://www.youtube.com/embed/VIDEO_ID`
-- `https://www.youtube.com/v/VIDEO_ID`
-
-### 재생목록
-- `https://www.youtube.com/playlist?list=PLAYLIST_ID`
-- `https://www.youtube.com/watch?v=VIDEO_ID&list=PLAYLIST_ID`
-
-## 자막 언어 우선순위
-
-기본값: 한국어 (ko) → 영어 (en)
-
-1. 한국어 (ko) - 수동 생성 자막
-2. 영어 (en) - 수동 생성 자막
-3. 한국어 (ko) - 자동 생성 자막
-4. 영어 (en) - 자동 생성 자막
-5. 기타 사용 가능한 첫 번째 자막
-
-## 테스트
-
-이 프로젝트는 pytest를 사용한 포괄적인 단위 테스트를 포함합니다.
-
-### 테스트 실행
+### Development Setup
 
 ```bash
-# 모든 테스트 실행
-pytest
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/utube-script-scrapper.git
 
-# 상세한 출력과 함께 실행
-pytest -v
+# Install development dependencies
+pip install -r requirements.txt
 
-# 커버리지 리포트와 함께 실행
-pytest --cov=. --cov-report=html
+# Run tests
+python -m pytest tests/ -v
 
-# 특정 테스트 파일만 실행
-pytest tests/test_youtube_api.py
-pytest tests/test_formatters.py
-pytest tests/test_playlist_handler.py
-pytest tests/test_gemini_api.py
+# Check code coverage
+python -m pytest tests/ --cov=api --cov=core --cov=tools --cov-report=html
 ```
 
-### 테스트 구조
+### Code Style
 
-- `tests/test_youtube_api.py`: YouTube API 모듈 테스트
-- `tests/test_formatters.py`: 포맷터 모듈 테스트
-- `tests/test_playlist_handler.py`: 재생목록 핸들러 테스트 (NEW)
-- `tests/test_gemini_api.py`: Gemini API 모듈 테스트 (NEW)
+- Follow **PEP 8** conventions
+- Use **type hints** throughout
+- Write **docstrings** for all public functions
+- Maintain **80%+ test coverage**
+- Use **async/await** for I/O operations
 
-## 개발자 가이드
+---
 
-### 새로운 출력 형식 추가하기
+## 🐛 Troubleshooting
 
-전략 패턴 덕분에 새로운 출력 형식을 쉽게 추가할 수 있습니다:
+### Common Issues
 
-1. `formatters.py`에 새 포맷터 클래스 생성:
-```python
-class SrtFormatter(Formatter):
-    def __init__(self):
-        super().__init__()
-        self.file_extension = "srt"
-        self.format_name = "SRT 자막"
+#### "Transcript not found" Error
 
-    def save(self, metadata, transcript, output_file, summary=None,
-             translation=None, key_topics=None):
-        # SRT 형식으로 저장하는 로직 구현
-        pass
-```
+**Problem**: Video doesn't have subtitles in the requested language.
 
-2. `get_available_formatters()` 함수에 추가:
-```python
-'5': SrtFormatter()
-```
-
-3. 테스트 작성:
-```python
-# tests/test_formatters.py에 테스트 추가
-class TestSrtFormatter:
-    def test_initialization(self):
-        formatter = SrtFormatter()
-        assert formatter.get_extension() == "srt"
-```
-
-### Clean Code 원칙
-
-이 프로젝트는 다음 원칙을 따릅니다:
-
-1. **단일 책임 원칙 (SRP)**: 각 모듈과 클래스는 하나의 책임만 가짐
-2. **개방-폐쇄 원칙 (OCP)**: 확장에는 열려있고 수정에는 닫혀있음
-3. **의존성 역전 원칙 (DIP)**: 추상화에 의존, 구체화에 의존하지 않음
-4. **Don't Repeat Yourself (DRY)**: 코드 중복 최소화
-5. **명확한 네이밍**: 함수와 변수명이 의도를 명확히 표현
-
-## 실전 예제
-
-### 예제 1: 교육 콘텐츠 분석
-
+**Solution**: Try different language combinations:
 ```bash
-# 강의 재생목록을 스크랩하고 AI 요약으로 학습 노트 생성
-python main.py "https://www.youtube.com/playlist?list=PLEducation123" \
-  --summary \
-  --topics 10 \
-  --format 4 \
-  --max-videos 10
+curl -X POST "http://localhost:8000/video/info" \
+  -d '{"video_url": "...", "languages": ["en", "auto"]}'
 ```
 
-### 예제 2: 다국어 콘텐츠 번역
+#### AI Service Returns 503
 
+**Problem**: Gemini API key not configured or invalid.
+
+**Solution**:
+1. Check your API key is set: `echo $GEMINI_API_KEY`
+2. Verify the key at [Google AI Studio](https://makersuite.google.com)
+3. Check API quota limits
+
+#### CORS Errors in Browser
+
+**Problem**: Cross-origin requests blocked.
+
+**Solution**: Configure CORS origins in `.env`:
+```env
+CORS_ORIGINS=["http://localhost:3000", "http://your-domain.com"]
+```
+
+#### Port Already in Use
+
+**Problem**: Port 8000 is already occupied.
+
+**Solution**: Use a different port:
 ```bash
-# 한국어 비디오를 영어로 번역
-python main.py "https://www.youtube.com/watch?v=KoreanVideo" \
-  --translate en \
-  --lang ko \
-  --format 2
+uvicorn api_main:app --port 8001
 ```
 
-### 예제 3: 컨퍼런스 토크 요약
+---
 
-```bash
-# 컨퍼런스 발표 영상의 핵심만 추출
-python main.py "https://www.youtube.com/watch?v=ConferenceTalk" \
-  --summary \
-  --topics 5 \
-  --format 4
-```
+## 📝 License
 
-## 요구사항
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- Python 3.7 이상
-- 인터넷 연결
-- Gemini API 키 (AI 기능 사용 시)
+---
 
-## 문제 해결
+## ⚠️ Disclaimer
 
-### Q: "자막을 찾을 수 없습니다" 오류가 발생합니다.
+- **Comply with YouTube's Terms of Service** when using this tool
+- **Respect copyright** - do not redistribute copyrighted content
+- **Rate limiting** may apply to YouTube and Gemini APIs
+- **Educational and personal use** - not for commercial scraping at scale
 
-A: 해당 비디오에 자막이 없거나, 언어 설정을 조정해보세요:
-```bash
-python main.py "VIDEO_URL" --lang en
-```
+---
 
-### Q: Gemini API 오류가 발생합니다.
+## 🗺️ Roadmap
 
-A:
-1. API 키가 올바르게 설정되었는지 확인
-2. API 할당량을 초과하지 않았는지 확인
-3. 인터넷 연결 상태 확인
+- [ ] WebSocket support for real-time progress updates
+- [ ] Database integration for caching results
+- [ ] Admin dashboard for monitoring
+- [ ] Docker containerization
+- [ ] Kubernetes deployment configs
+- [ ] GraphQL API support
+- [ ] More AI model integrations (OpenAI, Anthropic)
+- [ ] Video download capabilities
+- [ ] Batch processing queue system
 
-### Q: 재생목록 처리 중 일부 비디오가 실패합니다.
+---
 
-A: 정상 동작입니다. 자막이 없거나 접근 불가능한 비디오는 건너뛰고 계속 진행됩니다.
+## 📚 Additional Resources
 
-## 라이선스
+- **FastAPI Documentation**: https://fastapi.tiangolo.com
+- **Pydantic Documentation**: https://docs.pydantic.dev
+- **YouTube Data API**: https://developers.google.com/youtube
+- **Gemini API**: https://ai.google.dev/docs
+- **Project Issues**: https://github.com/Rosin23/utube-script-scrapper/issues
 
-이 프로젝트는 교육 및 개인 사용 목적으로 제공됩니다.
+---
 
-## 주의사항
+## 🙏 Acknowledgments
 
-- YouTube의 이용 약관을 준수하여 사용하세요.
-- 저작권이 있는 콘텐츠를 무단으로 배포하지 마세요.
-- API 사용 제한이 있을 수 있습니다.
-- Gemini API는 유료 서비스이며, 무료 할당량이 제한적일 수 있습니다.
+- **FastAPI** - Modern Python web framework
+- **yt-dlp** - YouTube data extraction
+- **Google Gemini** - AI capabilities
+- **Pydantic** - Data validation
+- **pytest** - Testing framework
 
-## 기여
+---
 
-버그 리포트, 기능 제안, Pull Request를 환영합니다!
+<div align="center">
 
-## 변경 이력
+**Made with ❤️ by [Rosin23](https://github.com/Rosin23)**
 
-### Phase 2 (현재)
-- ✅ YouTube 재생목록 지원 추가
-- ✅ Gemini API 통합 (AI 요약, 번역, 주제 추출)
-- ✅ 다국어 자막 지원 개선
-- ✅ CLI 인자 파싱 개선
-- ✅ 포괄적인 테스트 추가
+If you find this project useful, please consider giving it a ⭐️
 
-### Phase 1
-- ✅ 기본 스크래핑 기능
-- ✅ 다중 출력 형식 (TXT, JSON, XML, Markdown)
-- ✅ 모듈화 아키텍처
-- ✅ 단위 테스트
+[Report Bug](https://github.com/Rosin23/utube-script-scrapper/issues) •
+[Request Feature](https://github.com/Rosin23/utube-script-scrapper/issues) •
+[Documentation](http://localhost:8000/docs)
+
+</div>
