@@ -17,8 +17,7 @@ from api.schemas.ai import (
     AIEnhancementRequest,
     AIEnhancementResponse
 )
-from core import AIService
-from utils import settings
+from utils.dependencies import AIServiceDep, SettingsDep
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +28,11 @@ router = APIRouter(
 )
 
 
-def get_ai_service() -> AIService:
-    """AI 서비스 인스턴스를 생성합니다."""
-    return AIService(
-        api_key=settings.gemini_api_key,
-        model_name=settings.gemini_model_name
-    )
-
-
 @router.post("/summary", response_model=SummaryResponse)
-async def generate_summary(request: SummaryRequest):
+async def generate_summary(
+    request: SummaryRequest,
+    ai_service: AIServiceDep
+):
     """
     텍스트 요약을 생성합니다.
 
@@ -46,8 +40,6 @@ async def generate_summary(request: SummaryRequest):
     - **max_points**: 최대 요약 포인트 수 (1-10, 기본값: 5)
     - **language**: 요약 언어 코드 (기본값: ko)
     """
-    ai_service = get_ai_service()
-
     if not ai_service.is_available():
         raise HTTPException(
             status_code=503,
@@ -85,7 +77,10 @@ async def generate_summary(request: SummaryRequest):
 
 
 @router.post("/translate", response_model=TranslationResponse)
-async def translate_text(request: TranslationRequest):
+async def translate_text(
+    request: TranslationRequest,
+    ai_service: AIServiceDep
+):
     """
     텍스트를 번역합니다.
 
@@ -93,8 +88,6 @@ async def translate_text(request: TranslationRequest):
     - **target_language**: 대상 언어 코드 (필수)
     - **source_language**: 원본 언어 코드 (선택, 자동 감지)
     """
-    ai_service = get_ai_service()
-
     if not ai_service.is_available():
         raise HTTPException(
             status_code=503,
@@ -136,7 +129,10 @@ async def translate_text(request: TranslationRequest):
 
 
 @router.post("/topics", response_model=TopicExtractionResponse)
-async def extract_topics(request: TopicExtractionRequest):
+async def extract_topics(
+    request: TopicExtractionRequest,
+    ai_service: AIServiceDep
+):
     """
     텍스트에서 핵심 주제를 추출합니다.
 
@@ -144,8 +140,6 @@ async def extract_topics(request: TopicExtractionRequest):
     - **num_topics**: 추출할 주제 수 (1-20, 기본값: 5)
     - **language**: 주제 언어 코드 (기본값: ko)
     """
-    ai_service = get_ai_service()
-
     if not ai_service.is_available():
         raise HTTPException(
             status_code=503,
@@ -184,7 +178,10 @@ async def extract_topics(request: TopicExtractionRequest):
 
 
 @router.post("/enhance", response_model=AIEnhancementResponse)
-async def enhance_text(request: AIEnhancementRequest):
+async def enhance_text(
+    request: AIEnhancementRequest,
+    ai_service: AIServiceDep
+):
     """
     텍스트에 AI 기능을 종합적으로 적용합니다 (요약, 번역, 주제 추출).
 
@@ -193,8 +190,6 @@ async def enhance_text(request: AIEnhancementRequest):
     - **enable_translation**: 번역 활성화
     - **enable_topics**: 주제 추출 활성화
     """
-    ai_service = get_ai_service()
-
     if not ai_service.is_available():
         raise HTTPException(
             status_code=503,
@@ -239,12 +234,13 @@ async def enhance_text(request: AIEnhancementRequest):
 
 
 @router.get("/health")
-async def check_ai_health():
+async def check_ai_health(
+    ai_service: AIServiceDep,
+    settings: SettingsDep
+):
     """
     AI 서비스의 상태를 확인합니다.
     """
-    ai_service = get_ai_service()
-
     return JSONResponse(content={
         "available": ai_service.is_available(),
         "model": settings.gemini_model_name,

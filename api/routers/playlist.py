@@ -12,7 +12,7 @@ from api.schemas.playlist import (
     PlaylistInfo,
     PlaylistVideoInfo
 )
-from core import YouTubeService
+from utils.dependencies import YouTubeServiceDep
 
 logger = logging.getLogger(__name__)
 
@@ -24,15 +24,16 @@ router = APIRouter(
 
 
 @router.post("/info", response_model=PlaylistResponse)
-async def get_playlist_info(request: PlaylistRequest):
+async def get_playlist_info(
+    request: PlaylistRequest,
+    youtube_service: YouTubeServiceDep
+):
     """
     YouTube 플레이리스트의 정보와 비디오 목록을 가져옵니다.
 
     - **playlist_url**: YouTube 플레이리스트 URL (필수)
     - **max_videos**: 처리할 최대 비디오 수 (선택, None이면 제한 없음)
     """
-    youtube_service = YouTubeService()
-
     try:
         # 플레이리스트 확인
         if not youtube_service.is_playlist_url(request.playlist_url):
@@ -78,6 +79,7 @@ async def get_playlist_info(request: PlaylistRequest):
 
 @router.get("/check")
 async def check_playlist_url(
+    youtube_service: YouTubeServiceDep,
     url: str = Query(..., description="확인할 YouTube URL")
 ):
     """
@@ -85,8 +87,6 @@ async def check_playlist_url(
 
     - **url**: 확인할 YouTube URL
     """
-    youtube_service = YouTubeService()
-
     try:
         is_playlist = youtube_service.is_playlist_url(url)
 
@@ -111,6 +111,7 @@ async def check_playlist_url(
 
 @router.get("/videos")
 async def get_playlist_videos(
+    youtube_service: YouTubeServiceDep,
     playlist_url: str = Query(..., description="YouTube 플레이리스트 URL"),
     max_videos: int = Query(None, ge=1, description="최대 비디오 수")
 ):
@@ -120,8 +121,6 @@ async def get_playlist_videos(
     - **playlist_url**: YouTube 플레이리스트 URL
     - **max_videos**: 최대 비디오 수 (선택)
     """
-    youtube_service = YouTubeService()
-
     try:
         if not youtube_service.is_playlist_url(playlist_url):
             raise ValueError("Provided URL is not a playlist URL")

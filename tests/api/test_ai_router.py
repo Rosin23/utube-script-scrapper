@@ -4,9 +4,10 @@ AI 라우터 테스트
 
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from api_main import app
+from utils.dependencies import get_ai_service, get_settings
 
 client = TestClient(app)
 
@@ -23,13 +24,13 @@ class TestAIRouter:
         assert "available" in data
         assert "model" in data
 
-    @patch('api.routers.ai.AIService')
-    def test_generate_summary_success(self, mock_service_class):
+    def test_generate_summary_success(self):
         """요약 생성 성공 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = True
         mock_service.generate_summary_from_text.return_value = "This is a summary."
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/summary",
@@ -40,18 +41,20 @@ class TestAIRouter:
             }
         )
 
+        app.dependency_overrides = {}
+
         assert response.status_code == 200
         data = response.json()
         assert "summary" in data
         assert data["summary"] == "This is a summary."
 
-    @patch('api.routers.ai.AIService')
-    def test_translate_text_success(self, mock_service_class):
+    def test_translate_text_success(self):
         """번역 성공 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = True
         mock_service.translate_text.return_value = "Hello"
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/translate",
@@ -61,18 +64,20 @@ class TestAIRouter:
             }
         )
 
+        app.dependency_overrides = {}
+
         assert response.status_code == 200
         data = response.json()
         assert "translated_text" in data
         assert data["translated_text"] == "Hello"
 
-    @patch('api.routers.ai.AIService')
-    def test_extract_topics_success(self, mock_service_class):
+    def test_extract_topics_success(self):
         """주제 추출 성공 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = True
         mock_service.extract_topics_from_text.return_value = ["Topic 1", "Topic 2"]
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/topics",
@@ -83,17 +88,19 @@ class TestAIRouter:
             }
         )
 
+        app.dependency_overrides = {}
+
         assert response.status_code == 200
         data = response.json()
         assert "topics" in data
         assert len(data["topics"]) == 2
 
-    @patch('api.routers.ai.AIService')
-    def test_generate_summary_service_unavailable(self, mock_service_class):
+    def test_generate_summary_service_unavailable(self):
         """AI 서비스 사용 불가능 시 요약 실패 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = False
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/summary",
@@ -103,14 +110,16 @@ class TestAIRouter:
             }
         )
 
+        app.dependency_overrides = {}
+
         assert response.status_code == 503
 
-    @patch('api.routers.ai.AIService')
-    def test_translate_text_service_unavailable(self, mock_service_class):
+    def test_translate_text_service_unavailable(self):
         """AI 서비스 사용 불가능 시 번역 실패 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = False
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/translate",
@@ -120,14 +129,16 @@ class TestAIRouter:
             }
         )
 
+        app.dependency_overrides = {}
+
         assert response.status_code == 503
 
-    @patch('api.routers.ai.AIService')
-    def test_extract_topics_service_unavailable(self, mock_service_class):
+    def test_extract_topics_service_unavailable(self):
         """AI 서비스 사용 불가능 시 주제 추출 실패 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = False
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/topics",
@@ -137,10 +148,11 @@ class TestAIRouter:
             }
         )
 
+        app.dependency_overrides = {}
+
         assert response.status_code == 503
 
-    @patch('api.routers.ai.AIService')
-    def test_enhance_text_all_features(self, mock_service_class):
+    def test_enhance_text_all_features(self):
         """모든 AI 기능 적용 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = True
@@ -152,7 +164,8 @@ class TestAIRouter:
             'topics': ["Topic 1", "Topic 2"],
             'processing_time': 1.5
         }
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/enhance",
@@ -167,6 +180,8 @@ class TestAIRouter:
             }
         )
 
+        app.dependency_overrides = {}
+
         assert response.status_code == 200
         data = response.json()
         assert data["summary"] == "Test summary"
@@ -174,12 +189,12 @@ class TestAIRouter:
         assert len(data["topics"]) == 2
         assert "processing_time" in data
 
-    @patch('api.routers.ai.AIService')
-    def test_enhance_text_service_unavailable(self, mock_service_class):
+    def test_enhance_text_service_unavailable(self):
         """AI 서비스 사용 불가능 시 향상 실패 테스트"""
         mock_service = Mock()
         mock_service.is_available.return_value = False
-        mock_service_class.return_value = mock_service
+
+        app.dependency_overrides[get_ai_service] = lambda: mock_service
 
         response = client.post(
             "/ai/enhance",
@@ -188,5 +203,7 @@ class TestAIRouter:
                 "enable_summary": True
             }
         )
+
+        app.dependency_overrides = {}
 
         assert response.status_code == 503

@@ -15,8 +15,11 @@ from api.schemas.video import (
     VideoMetadata,
     TranscriptEntry
 )
-from core import YouTubeService, AIService, FormatterService
-from utils import settings
+from utils.dependencies import (
+    YouTubeServiceDep,
+    AIServiceDep,
+    FormatterServiceDep
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,10 @@ router = APIRouter(
 
 
 @router.post("/info", response_model=VideoResponse)
-async def get_video_info(request: VideoRequest):
+async def get_video_info(
+    request: VideoRequest,
+    youtube_service: YouTubeServiceDep
+):
     """
     YouTube 비디오의 메타데이터와 자막을 가져옵니다.
 
@@ -36,8 +42,6 @@ async def get_video_info(request: VideoRequest):
     - **languages**: 자막 언어 우선순위 목록 (선택, 기본값: ["ko", "en"])
     - **prefer_manual**: 수동 생성 자막 선호 여부 (선택, 기본값: True)
     """
-    youtube_service = YouTubeService()
-
     try:
         # 비디오 정보 가져오기
         result = youtube_service.get_video_info(
@@ -62,7 +66,12 @@ async def get_video_info(request: VideoRequest):
 
 
 @router.post("/scrape", response_model=VideoScrapeResponse)
-async def scrape_video(request: VideoScrapeRequest):
+async def scrape_video(
+    request: VideoScrapeRequest,
+    youtube_service: YouTubeServiceDep,
+    ai_service: AIServiceDep,
+    formatter_service: FormatterServiceDep
+):
     """
     YouTube 비디오를 스크래핑하고 AI 기능을 적용합니다.
 
@@ -73,13 +82,6 @@ async def scrape_video(request: VideoScrapeRequest):
     - **enable_topics**: 주제 추출 활성화 여부
     - **output_format**: 출력 형식 (txt, json, xml, markdown)
     """
-    youtube_service = YouTubeService()
-    ai_service = AIService(
-        api_key=settings.gemini_api_key,
-        model_name=settings.gemini_model_name
-    )
-    formatter_service = FormatterService()
-
     try:
         # 1. 비디오 정보 가져오기
         logger.info(f"Scraping video: {request.video_url}")
@@ -156,6 +158,7 @@ async def scrape_video(request: VideoScrapeRequest):
 
 @router.get("/metadata")
 async def get_video_metadata(
+    youtube_service: YouTubeServiceDep,
     video_url: str = Query(..., description="YouTube 비디오 URL")
 ):
     """
@@ -163,8 +166,6 @@ async def get_video_metadata(
 
     - **video_url**: YouTube 비디오 URL
     """
-    youtube_service = YouTubeService()
-
     try:
         video_id = youtube_service.extract_video_id(video_url)
         if not video_id:
@@ -184,6 +185,7 @@ async def get_video_metadata(
 
 @router.get("/transcript")
 async def get_video_transcript(
+    youtube_service: YouTubeServiceDep,
     video_url: str = Query(..., description="YouTube 비디오 URL"),
     languages: List[str] = Query(default=["ko", "en"], description="자막 언어 우선순위"),
     prefer_manual: bool = Query(default=True, description="수동 생성 자막 선호 여부")
@@ -195,8 +197,6 @@ async def get_video_transcript(
     - **languages**: 자막 언어 우선순위 목록
     - **prefer_manual**: 수동 생성 자막 선호 여부
     """
-    youtube_service = YouTubeService()
-
     try:
         video_id = youtube_service.extract_video_id(video_url)
         if not video_id:
