@@ -7,7 +7,7 @@
               {
                 "type": "command",
                 "command": ".claude/hooks/install_dependencies.sh",
-                "timeout": 300
+                "timeout": 1000
               }
             ]
           }
