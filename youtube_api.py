@@ -93,18 +93,26 @@ def get_video_metadata(url: str) -> Dict[str, str]:
         }
 
 
-def get_transcript_with_timestamps(video_id: str, languages: List[str] = ['ko', 'en']) -> List[Dict]:
+def get_transcript_with_timestamps(
+    video_id: str,
+    languages: Optional[List[str]] = None,
+    prefer_manual: bool = True
+) -> List[Dict]:
     """
     YouTube 비디오의 자막을 타임스탬프와 함께 가져옵니다.
     youtube-transcript-api 0.x와 1.x 버전 모두 지원합니다.
 
     Args:
         video_id: YouTube 비디오 ID
-        languages: 선호하는 언어 목록 (기본값: ['ko', 'en'])
+        languages: 선호하는 언어 목록 (기본값: None이면 ['ko', 'en'] 사용)
+        prefer_manual: 수동 생성 자막을 우선적으로 사용할지 여부 (기본값: True)
 
     Returns:
         타임스탬프와 텍스트를 담은 딕셔너리 리스트
     """
+    # 기본 언어 설정
+    if languages is None:
+        languages = ['ko', 'en']
 
     # 신버전 (1.x) API 사용 시도 - fetch() 인스턴스 메서드
     try:
