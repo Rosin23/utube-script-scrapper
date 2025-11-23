@@ -4,7 +4,7 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from playlist_handler import PlaylistHandler, process_playlist_or_video
+from legacy.playlist_handler import PlaylistHandler, process_playlist_or_video
 
 
 class TestPlaylistHandler:

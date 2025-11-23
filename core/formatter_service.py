@@ -7,7 +7,7 @@ from typing import Optional, List, Dict
 import logging
 import os
 
-from formatters import get_formatter, get_available_formatters, Formatter
+from legacy.formatters import get_formatter, get_available_formatters, Formatter
 
 logger = logging.getLogger(__name__)
 

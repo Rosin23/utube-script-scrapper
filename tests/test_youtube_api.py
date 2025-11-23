@@ -4,7 +4,7 @@ YouTube API 모듈 단위 테스트
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from youtube_api import (
+from legacy.youtube_api import (
     extract_video_id,
     format_timestamp,
     get_video_metadata,

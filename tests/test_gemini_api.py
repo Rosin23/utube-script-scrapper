@@ -21,8 +21,8 @@ sys.modules['google.genai.types'] = mock_types_module
 
 
 # 이제 안전하게 gemini_api import 가능
-import gemini_api
-from gemini_api import GeminiAPIError, GeminiClient, is_gemini_available, get_gemini_client
+import legacy.gemini_api as gemini_api
+from legacy.gemini_api import GeminiAPIError, GeminiClient, is_gemini_available, get_gemini_client
 
 
 class TestGeminiAPIError:

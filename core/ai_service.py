@@ -8,7 +8,7 @@ import logging
 import time
 import os
 
-from gemini_api import GeminiClient, is_gemini_available, GeminiAPIError
+from legacy.gemini_api import GeminiClient, is_gemini_available, GeminiAPIError
 from utils.config import settings
 
 # google-genai 패키지 import 확인

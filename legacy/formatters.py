@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 import json
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from youtube_api import format_timestamp
+from .youtube_api import format_timestamp
 
 
 class Formatter(ABC):

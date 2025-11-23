@@ -6,7 +6,7 @@ import pytest
 import json
 import xml.etree.ElementTree as ET
 import os
-from formatters import (
+from legacy.formatters import (
     TxtFormatter,
     JsonFormatter,
     XmlFormatter,

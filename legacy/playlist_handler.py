@@ -177,7 +177,7 @@ class PlaylistHandler:
             elif isinstance(entry, str):
                 # 문자열인 경우 (URL 또는 video_id)
                 # URL에서 video_id 추출 시도
-                from youtube_api import extract_video_id
+                from .youtube_api import extract_video_id
                 video_id = extract_video_id(entry) or entry
                 video_url = entry if entry.startswith('http') else f"https://www.youtube.com/watch?v={entry}"
                 video_title = 'Unknown Title'  # URL만 있으면 제목을 알 수 없음

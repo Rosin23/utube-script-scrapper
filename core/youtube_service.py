@@ -13,13 +13,13 @@ Reference: https://developers.google.com/youtube/v3/docs
 from typing import Optional, List, Dict
 import logging
 
-from youtube_api import (
+from legacy.youtube_api import (
     extract_video_id,
     get_video_metadata,
     get_transcript_with_timestamps,
     format_timestamp
 )
-from playlist_handler import PlaylistHandler, process_playlist_or_video
+from legacy.playlist_handler import PlaylistHandler, process_playlist_or_video
 from utils.youtube_api_mapper import YouTubeAPIMapper
 
 logger = logging.getLogger(__name__)
