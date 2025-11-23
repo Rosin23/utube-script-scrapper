@@ -1,6 +1,13 @@
 """
 YouTube 서비스
 YouTube 데이터 추출 및 처리를 위한 서비스 레이어
+
+YouTube Data API v3 Support:
+- 모든 메서드는 api_v3_format 파라미터 지원
+- YouTube Data API v3 표준 형식으로 응답 가능
+- 필드 매핑 및 변환은 youtube_api_mapper 사용
+
+Reference: https://developers.google.com/youtube/v3/docs
 """
 
 from typing import Optional, List, Dict
@@ -13,6 +20,7 @@ from youtube_api import (
     format_timestamp
 )
 from playlist_handler import PlaylistHandler, process_playlist_or_video
+from utils.youtube_api_mapper import YouTubeAPIMapper
 
 logger = logging.getLogger(__name__)
 
@@ -40,25 +48,30 @@ class YouTubeService:
         """
         return extract_video_id(url)
 
-    def get_video_metadata(self, video_id: str) -> Dict:
+    def get_video_metadata(self, video_id: str, api_v3_format: bool = False) -> Dict:
         """
         비디오 메타데이터를 가져옵니다.
 
         Args:
             video_id: YouTube 비디오 ID
+            api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
 
         Returns:
             메타데이터 딕셔너리 (VideoMetadata 스키마와 일치)
+
+        Reference:
+            https://developers.google.com/youtube/v3/docs/videos#resource
         """
         try:
             # video_id를 URL로 변환
             video_url = f"https://www.youtube.com/watch?v={video_id}"
-            metadata = get_video_metadata(video_url)
-            
-            # video_id가 없으면 추가
-            if 'video_id' not in metadata or not metadata['video_id']:
-                metadata['video_id'] = video_id
-                
+            metadata = get_video_metadata(video_url, api_v3_format=api_v3_format)
+
+            # Legacy format: video_id가 없으면 추가
+            if not api_v3_format:
+                if 'video_id' not in metadata or not metadata['video_id']:
+                    metadata['video_id'] = video_id
+
             logger.info(f"Successfully retrieved metadata for video {video_id}")
             return metadata
         except Exception as e:
@@ -110,7 +123,8 @@ class YouTubeService:
         self,
         video_url: str,
         languages: List[str] = None,
-        prefer_manual: bool = True
+        prefer_manual: bool = True,
+        api_v3_format: bool = False
     ) -> Dict:
         """
         비디오의 전체 정보를 가져옵니다 (메타데이터 + 자막).
@@ -119,6 +133,7 @@ class YouTubeService:
             video_url: YouTube 비디오 URL
             languages: 자막 언어 우선순위 목록
             prefer_manual: 수동 생성 자막 선호 여부
+            api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
 
         Returns:
             메타데이터와 자막을 포함한 딕셔너리
@@ -136,7 +151,7 @@ class YouTubeService:
             raise ValueError(f"Invalid YouTube URL: {video_url}")
 
         # 메타데이터 및 자막 가져오기
-        metadata = self.get_video_metadata(video_id)
+        metadata = self.get_video_metadata(video_id, api_v3_format=api_v3_format)
         transcript = self.get_transcript(video_id, languages, prefer_manual)
 
         return {
@@ -157,18 +172,22 @@ class YouTubeService:
         """
         return self.playlist_handler.is_playlist_url(url)
 
-    def get_playlist_info(self, playlist_url: str) -> Optional[Dict]:
+    def get_playlist_info(self, playlist_url: str, api_v3_format: bool = False) -> Optional[Dict]:
         """
         플레이리스트 정보를 가져옵니다.
 
         Args:
             playlist_url: YouTube 플레이리스트 URL
+            api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
 
         Returns:
             플레이리스트 정보 딕셔너리 또는 None
+
+        Reference:
+            https://developers.google.com/youtube/v3/docs/playlists#resource
         """
         try:
-            info = self.playlist_handler.get_playlist_info(playlist_url)
+            info = self.playlist_handler.get_playlist_info(playlist_url, api_v3_format=api_v3_format)
             logger.info(f"Successfully retrieved playlist info for {playlist_url}")
             return info
         except Exception as e:
@@ -178,7 +197,8 @@ class YouTubeService:
     def get_playlist_videos(
         self,
         playlist_url: str,
-        max_videos: Optional[int] = None
+        max_videos: Optional[int] = None,
+        api_v3_format: bool = False
     ) -> List[Dict]:
         """
         플레이리스트의 비디오 목록을 가져옵니다.
@@ -186,15 +206,22 @@ class YouTubeService:
         Args:
             playlist_url: YouTube 플레이리스트 URL
             max_videos: 최대 비디오 수 제한
+            api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
 
         Returns:
             비디오 정보 리스트
 
         Raises:
             Exception: 플레이리스트 추출 실패 시
+
+        Reference:
+            https://developers.google.com/youtube/v3/docs/playlistItems#resource
         """
         try:
-            videos = self.playlist_handler.get_video_urls_from_playlist(playlist_url)
+            videos = self.playlist_handler.get_video_urls_from_playlist(
+                playlist_url,
+                api_v3_format=api_v3_format
+            )
 
             if max_videos and max_videos > 0:
                 videos = videos[:max_videos]

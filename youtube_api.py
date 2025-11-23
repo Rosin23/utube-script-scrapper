@@ -1,12 +1,20 @@
 """
 YouTube API 모듈
 YouTube 비디오 메타데이터 및 자막 추출 기능을 제공합니다.
+
+YouTube Data API v3 Compliance:
+- 모든 메타데이터 함수는 api_v3_format 플래그 지원
+- yt-dlp 응답을 YouTube API v3 표준 형식으로 변환 가능
+- 필드 매핑: upload_date → publishedAt, channel → channelTitle 등
+
+Reference: https://developers.google.com/youtube/v3/docs
 """
 
 import re
 from typing import Optional, Dict, List
 import yt_dlp
 from youtube_transcript_api import YouTubeTranscriptApi
+from utils.youtube_api_mapper import YouTubeAPIMapper
 
 
 def extract_video_id(url: str) -> Optional[str]:
@@ -53,15 +61,37 @@ def format_timestamp(seconds: float) -> str:
         return f"{minutes:02d}:{secs:02d}"
 
 
-def get_video_metadata(url: str) -> Dict[str, str]:
+def get_video_metadata(url: str, api_v3_format: bool = False) -> Dict[str, str]:
     """
     YouTube 비디오의 메타데이터를 가져옵니다.
 
     Args:
         url: YouTube 비디오 URL
+        api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
 
     Returns:
-        title, description, channel 등의 정보를 담은 딕셔너리
+        비디오 메타데이터 딕셔너리
+
+    Field Mappings (Legacy → YouTube API v3):
+        - video_id → id
+        - upload_date → snippet.publishedAt (ISO 8601)
+        - channel → snippet.channelTitle
+        - duration → contentDetails.duration (ISO 8601)
+        - view_count → statistics.viewCount (string)
+        - like_count → statistics.likeCount (string)
+        - thumbnail_url → snippet.thumbnails.{quality}.url
+
+    Reference:
+        https://developers.google.com/youtube/v3/docs/videos#resource
+
+    Examples:
+        >>> # Legacy format (default)
+        >>> metadata = get_video_metadata("https://youtube.com/watch?v=...")
+        >>> metadata['channel']  # 'Channel Name'
+
+        >>> # YouTube API v3 format
+        >>> metadata = get_video_metadata("https://youtube.com/watch?v=...", api_v3_format=True)
+        >>> metadata['snippet']['channelTitle']  # 'Channel Name'
     """
     ydl_opts = {
         'quiet': True,
@@ -72,38 +102,62 @@ def get_video_metadata(url: str) -> Dict[str, str]:
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            
+
             # video_id 추출
             video_id = info.get('id', '')
             if not video_id:
                 # URL에서 추출 시도
                 video_id = extract_video_id(url) or ''
 
-            return {
+            # Legacy format (default, backward compatible)
+            legacy_data = {
                 'video_id': video_id,
                 'title': info.get('title', 'Unknown Title'),
                 'description': info.get('description', 'No description available'),
                 'channel': info.get('channel', 'Unknown Channel'),
+                'channel_id': info.get('channel_id', ''),  # YouTube API v3 필드 추가
                 'upload_date': info.get('upload_date', 'Unknown Date'),
                 'duration': info.get('duration', 0),
                 'view_count': info.get('view_count', 0),
-                'like_count': info.get('like_count'),  # 추가
-                'thumbnail_url': info.get('thumbnail') or info.get('thumbnails', [{}])[0].get('url') if info.get('thumbnails') else None,  # 추가
+                'like_count': info.get('like_count'),
+                'comment_count': info.get('comment_count'),  # 추가
+                'tags': info.get('tags', []),  # YouTube API v3 필드 추가
+                'categories': info.get('categories', []),  # YouTube API v3 필드 추가
+                'thumbnail_url': info.get('thumbnail') or info.get('thumbnails', [{}])[0].get('url') if info.get('thumbnails') else None,
             }
+
+            # Return YouTube API v3 format if requested
+            if api_v3_format:
+                return YouTubeAPIMapper.map_video_to_api_v3(info)
+
+            return legacy_data
+
     except Exception as e:
         print(f"메타데이터 추출 오류: {e}")
         video_id = extract_video_id(url) or ''
-        return {
+
+        # Legacy format error response
+        error_data = {
             'video_id': video_id,
             'title': 'Unknown Title',
             'description': 'No description available',
             'channel': 'Unknown Channel',
+            'channel_id': '',
             'upload_date': 'Unknown Date',
             'duration': 0,
             'view_count': 0,
             'like_count': None,
+            'comment_count': None,
+            'tags': [],
+            'categories': [],
             'thumbnail_url': None,
         }
+
+        # Return YouTube API v3 format error if requested
+        if api_v3_format:
+            return YouTubeAPIMapper.map_video_from_legacy(error_data)
+
+        return error_data
 
 
 def get_transcript_with_timestamps(

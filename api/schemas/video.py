@@ -1,5 +1,26 @@
 """
 비디오 관련 Pydantic 스키마
+
+YouTube Data API v3 Field Mappings:
+====================================
+
+Legacy Format → YouTube API v3:
+- video_id → id
+- upload_date → snippet.publishedAt (ISO 8601)
+- channel → snippet.channelTitle
+- channel_id → snippet.channelId
+- duration → contentDetails.duration (ISO 8601)
+- view_count → statistics.viewCount (string)
+- like_count → statistics.likeCount (string)
+- thumbnail_url → snippet.thumbnails.{quality}.url
+- tags → snippet.tags
+- categories → snippet.categoryId
+
+Reference:
+- Videos Resource: https://developers.google.com/youtube/v3/docs/videos
+- Video Snippet: https://developers.google.com/youtube/v3/docs/videos#snippet
+- ContentDetails: https://developers.google.com/youtube/v3/docs/videos#contentDetails
+- Statistics: https://developers.google.com/youtube/v3/docs/videos#statistics
 """
 
 from typing import Optional, List
@@ -49,32 +70,87 @@ class TranscriptEntry(BaseModel):
 
 
 class VideoMetadata(BaseModel):
-    """비디오 메타데이터 스키마"""
+    """
+    비디오 메타데이터 스키마
+
+    YouTube Data API v3 Mapping:
+    - video_id → id
+    - title → snippet.title
+    - channel → snippet.channelTitle
+    - channel_id → snippet.channelId
+    - upload_date → snippet.publishedAt (yt-dlp format: YYYYMMDD)
+    - duration → contentDetails.duration (seconds, not ISO 8601 in legacy format)
+    - view_count → statistics.viewCount (integer in legacy format)
+    - like_count → statistics.likeCount (integer in legacy format)
+    - comment_count → statistics.commentCount
+    - tags → snippet.tags
+    - categories → snippet.categoryId
+
+    Note: Legacy format uses different data types than YouTube API v3.
+    Use api_v3_format=True in API calls to get YouTube API v3 compliant responses.
+
+    Reference: https://developers.google.com/youtube/v3/docs/videos#resource
+    """
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "video_id": "dQw4w9WgXcQ",
                 "title": "Sample Video Title",
                 "channel": "Sample Channel",
+                "channel_id": "UC1234567890",
                 "upload_date": "20230101",
                 "duration": 212,
                 "view_count": 1000000,
                 "like_count": 50000,
+                "comment_count": 1200,
                 "description": "Sample description",
-                "thumbnail_url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+                "thumbnail_url": "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+                "tags": ["music", "video"],
+                "categories": ["10"]
             }
         }
     )
 
-    video_id: str = Field(..., description="YouTube 비디오 ID")
-    title: str = Field(..., description="비디오 제목")
-    channel: str = Field(..., description="채널 이름")
-    upload_date: Optional[str] = Field(None, description="업로드 날짜")
-    duration: Optional[int] = Field(None, description="비디오 길이 (초)")
-    view_count: Optional[int] = Field(None, description="조회수")
-    like_count: Optional[int] = Field(None, description="좋아요 수")
-    description: Optional[str] = Field(None, description="비디오 설명")
-    thumbnail_url: Optional[str] = Field(None, description="썸네일 URL")
+    video_id: str = Field(..., description="YouTube 비디오 ID (YouTube API v3: id)")
+    title: str = Field(..., description="비디오 제목 (YouTube API v3: snippet.title)")
+    channel: str = Field(..., description="채널 이름 (YouTube API v3: snippet.channelTitle)")
+    channel_id: Optional[str] = Field(None, description="채널 ID (YouTube API v3: snippet.channelId)")
+    upload_date: Optional[str] = Field(
+        None,
+        description="업로드 날짜 (yt-dlp format: YYYYMMDD, YouTube API v3: snippet.publishedAt in ISO 8601)"
+    )
+    duration: Optional[int] = Field(
+        None,
+        description="비디오 길이 (초). YouTube API v3에서는 ISO 8601 duration (PT#M#S) 형식"
+    )
+    view_count: Optional[int] = Field(
+        None,
+        description="조회수 (YouTube API v3: statistics.viewCount as string)"
+    )
+    like_count: Optional[int] = Field(
+        None,
+        description="좋아요 수 (YouTube API v3: statistics.likeCount as string)"
+    )
+    comment_count: Optional[int] = Field(
+        None,
+        description="댓글 수 (YouTube API v3: statistics.commentCount as string)"
+    )
+    description: Optional[str] = Field(
+        None,
+        description="비디오 설명 (YouTube API v3: snippet.description)"
+    )
+    thumbnail_url: Optional[str] = Field(
+        None,
+        description="썸네일 URL (YouTube API v3: snippet.thumbnails.{quality}.url)"
+    )
+    tags: Optional[List[str]] = Field(
+        None,
+        description="태그 목록 (YouTube API v3: snippet.tags)"
+    )
+    categories: Optional[List[str]] = Field(
+        None,
+        description="카테고리 ID 목록 (YouTube API v3: snippet.categoryId)"
+    )
 
 
 class VideoResponse(BaseModel):

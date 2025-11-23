@@ -1,11 +1,19 @@
 """
 재생목록 핸들러 모듈
 YouTube 재생목록 감지 및 처리 기능을 제공합니다.
+
+YouTube Data API v3 Compliance:
+- 모든 함수는 api_v3_format 플래그 지원
+- yt-dlp 응답을 YouTube API v3 표준 형식으로 변환
+- 필드 매핑: uploader → channelTitle, position (0-based) 유지
+
+Reference: https://developers.google.com/youtube/v3/docs/playlists
 """
 
 import re
 from typing import Optional, List, Dict
 import yt_dlp
+from utils.youtube_api_mapper import YouTubeAPIMapper
 
 
 class PlaylistHandler:
@@ -50,15 +58,24 @@ class PlaylistHandler:
         return None
 
     @staticmethod
-    def get_playlist_info(url: str) -> Optional[Dict]:
+    def get_playlist_info(url: str, api_v3_format: bool = False) -> Optional[Dict]:
         """
         재생목록의 정보를 가져옵니다.
 
         Args:
             url: YouTube 재생목록 URL
+            api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
 
         Returns:
             재생목록 정보 딕셔너리 (PlaylistInfo 스키마와 일치)
+
+        Field Mappings (Legacy → YouTube API v3):
+            - playlist_id → id
+            - uploader → snippet.channelTitle
+            - video_count → contentDetails.itemCount
+
+        Reference:
+            https://developers.google.com/youtube/v3/docs/playlists#resource
         """
         ydl_opts = {
             'quiet': True,
@@ -88,24 +105,48 @@ class PlaylistHandler:
                     # entries에서 유효한 항목 수 계산
                     valid_entries = [e for e in entries if e is not None]
                     video_count = len(valid_entries)
-                
-                return {
-                    'playlist_id': info.get('id', 'Unknown'),  # 필드명 변경
+
+                # Legacy format (default, backward compatible)
+                legacy_data = {
+                    'playlist_id': info.get('id', 'Unknown'),
                     'title': info.get('title', 'Unknown Playlist'),
-                    'uploader': info.get('uploader', 'Unknown Channel'),
-                    'video_count': video_count,  # 개선된 계산
-                    'description': info.get('description'),  # description 추가
-                    'entries': entries  # 내부 사용용 (필요시)
+                    'uploader': info.get('uploader', 'Unknown Channel'),  # Legacy field
+                    'uploader_id': info.get('uploader_id', ''),  # YouTube API v3 필드
+                    'channel_id': info.get('channel_id', ''),  # Alternative field name
+                    'video_count': video_count,
+                    'description': info.get('description'),
+                    'entries': entries  # 내부 사용용
                 }
+
+                # Return YouTube API v3 format if requested
+                if api_v3_format:
+                    return YouTubeAPIMapper.map_playlist_to_api_v3(info)
+
+                return legacy_data
 
         except Exception as e:
             print(f"⚠️  재생목록 정보 추출 오류: {e}")
             return None
 
     @staticmethod
-    def get_video_urls_from_playlist(url: str, playlist_info: Optional[Dict] = None) -> List[Dict[str, str]]:
+    def get_video_urls_from_playlist(
+        url: str,
+        playlist_info: Optional[Dict] = None,
+        api_v3_format: bool = False
+    ) -> List[Dict[str, str]]:
         """
         재생목록에서 모든 비디오 URL을 추출합니다.
+
+        Args:
+            url: YouTube 플레이리스트 URL
+            playlist_info: 미리 가져온 플레이리스트 정보 (선택적)
+            api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
+
+        Returns:
+            비디오 정보 리스트
+
+        Reference:
+            https://developers.google.com/youtube/v3/docs/playlistItems#resource
         """
         if playlist_info is None:
             playlist_info = PlaylistHandler.get_playlist_info(url)
@@ -146,30 +187,42 @@ class PlaylistHandler:
                 continue
 
             if video_id:
-                videos.append({
+                video_data = {
                     'id': video_id,
                     'url': video_url or f"https://www.youtube.com/watch?v={video_id}",
                     'title': video_title,
-                    'position': position  # 0-based position 추가 (API 문서와 일치)
-                })
+                    'position': position  # 0-based position (YouTube API v3 표준)
+                }
+
+                # Return YouTube API v3 format if requested
+                if api_v3_format:
+                    playlist_id = PlaylistHandler.extract_playlist_id(url) or 'Unknown'
+                    video_data = YouTubeAPIMapper.map_playlist_item_to_api_v3(
+                        video_data,
+                        playlist_id,
+                        position
+                    )
+
+                videos.append(video_data)
 
         return videos
 
     @staticmethod
-    def get_playlist_metadata(url: str) -> Dict:
+    def get_playlist_metadata(url: str, api_v3_format: bool = False) -> Dict:
         """
         재생목록의 메타데이터를 간단히 가져옵니다.
 
         Args:
             url: YouTube 재생목록 URL
+            api_v3_format: True이면 YouTube Data API v3 호환 형식으로 반환
 
         Returns:
             재생목록 메타데이터 (PlaylistInfo 스키마와 호환)
         """
-        playlist_info = PlaylistHandler.get_playlist_info(url)
+        playlist_info = PlaylistHandler.get_playlist_info(url, api_v3_format=api_v3_format)
 
         if not playlist_info:
-            return {
+            default_data = {
                 'playlist_id': 'Unknown',
                 'title': 'Unknown Playlist',
                 'uploader': 'Unknown Channel',
@@ -177,13 +230,35 @@ class PlaylistHandler:
                 'description': None
             }
 
-        return {
-            'playlist_id': playlist_info.get('playlist_id', 'Unknown'),
-            'title': playlist_info.get('title', 'Unknown Playlist'),
-            'uploader': playlist_info.get('uploader', 'Unknown Channel'),
-            'video_count': playlist_info.get('video_count', 0),
-            'description': playlist_info.get('description')
-        }
+            if api_v3_format:
+                # Return minimal YouTube API v3 format
+                return {
+                    'kind': 'youtube#playlist',
+                    'id': 'Unknown',
+                    'snippet': {
+                        'title': 'Unknown Playlist',
+                        'channelTitle': 'Unknown Channel',
+                        'description': None
+                    },
+                    'contentDetails': {
+                        'itemCount': 0
+                    }
+                }
+
+            return default_data
+
+        # Legacy format handling
+        if not api_v3_format:
+            return {
+                'playlist_id': playlist_info.get('playlist_id', 'Unknown'),
+                'title': playlist_info.get('title', 'Unknown Playlist'),
+                'uploader': playlist_info.get('uploader', 'Unknown Channel'),
+                'video_count': playlist_info.get('video_count', 0),
+                'description': playlist_info.get('description')
+            }
+
+        # Already in API v3 format
+        return playlist_info
 
 
 def process_playlist_or_video(url: str) -> Dict:
