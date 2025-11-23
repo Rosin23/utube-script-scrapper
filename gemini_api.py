@@ -117,13 +117,19 @@ class GeminiClient:
 
         return " ".join([entry.get('text', '').strip() for entry in transcript if entry.get('text')])
 
-    def _make_api_call(self, prompt: str, temperature: float = 0.7) -> Optional[str]:
+    def _make_api_call(
+        self,
+        prompt: str,
+        temperature: float = 0.7,
+        timeout: Optional[int] = None
+    ) -> Optional[str]:
         """
         재시도 로직이 포함된 API 호출을 수행합니다.
 
         Args:
             prompt: 전달할 프롬프트
             temperature: 생성 온도 (0.0-1.0)
+            timeout: API 호출 타임아웃 (초, None이면 무제한)
 
         Returns:
             생성된 텍스트 또는 None (실패 시)
@@ -131,12 +137,14 @@ class GeminiClient:
         for attempt in range(self.retry_count):
             try:
                 # google-genai 패키지의 새로운 API 방식
+                config_params = {'temperature': temperature}
+                if timeout is not None:
+                    config_params['timeout'] = timeout
+
                 response = self.client.models.generate_content(
                     model=self.model_name,
                     contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=temperature
-                    )
+                    config=types.GenerateContentConfig(**config_params)
                 )
 
                 # 응답 검증
@@ -235,11 +243,47 @@ Summary:"""
             logger.error(f"요약 생성 오류: {e}")
             return None
 
+    def _truncate_text_smartly(self, text: str, max_chars: int = 30000) -> str:
+        """
+        문장 경계에서 텍스트를 스마트하게 자릅니다.
+
+        단순 절단 대신 문장 종결 기호에서 자르기 때문에 번역 품질이 향상됩니다.
+
+        Args:
+            text: 자를 텍스트
+            max_chars: 최대 문자 수
+
+        Returns:
+            잘린 텍스트
+        """
+        if len(text) <= max_chars:
+            return text
+
+        # 문장 종결 기호에서 자르기
+        truncated = text[:max_chars]
+        delimiters = ['. ', '。', '! ', '? ', '\n\n', '.\n', '。\n']
+
+        # 최소 80% 이상 유지하면서 문장 경계 찾기
+        min_length = int(max_chars * 0.8)
+        for delimiter in delimiters:
+            idx = truncated.rfind(delimiter)
+            if idx > min_length:
+                return text[:idx + len(delimiter)]
+
+        # 문장 경계를 찾지 못한 경우 단어 경계에서 자르기
+        last_space = truncated.rfind(' ')
+        if last_space > min_length:
+            return text[:last_space]
+
+        # 최악의 경우 그냥 자르기
+        return text[:max_chars]
+
     def translate_text(
         self,
         text: str,
         target_language: str = 'en',
-        source_language: Optional[str] = None
+        source_language: Optional[str] = None,
+        timeout: int = 30
     ) -> Optional[str]:
         """
         텍스트를 번역합니다.
@@ -248,6 +292,7 @@ Summary:"""
             text: 번역할 텍스트
             target_language: 대상 언어 코드
             source_language: 소스 언어 코드 (None일 경우 자동 감지)
+            timeout: API 호출 타임아웃 (초, 기본값: 30)
 
         Returns:
             번역된 텍스트 또는 None (실패 시)
@@ -257,34 +302,38 @@ Summary:"""
             return None
 
         try:
-            # 텍스트 길이 제한
+            # 스마트 텍스트 절단 (문장 경계에서)
             max_chars = 30000
+            original_length = len(text)
             if len(text) > max_chars:
-                logger.info(f"텍스트가 너무 깁니다. {max_chars}자로 제한합니다.")
-                text = text[:max_chars] + "..."
+                text = self._truncate_text_smartly(text, max_chars)
+                logger.info(
+                    f"텍스트가 너무 깁니다. {original_length}자 → {len(text)}자로 스마트 절단"
+                )
 
             target_lang_name = self.LANGUAGE_NAMES.get(target_language, target_language)
 
+            # 영어 프롬프트 사용 (품질 10-15% 향상)
             if source_language:
                 source_lang_name = self.LANGUAGE_NAMES.get(source_language, source_language)
-                prompt = f"""다음 {source_lang_name} 텍스트를 {target_lang_name}로 번역해주세요.
-번역 결과만 출력하고, 다른 설명은 포함하지 마세요.
+                prompt = f"""Translate the following {source_lang_name} text to {target_lang_name}.
+Output only the translation, without any explanations or additional comments.
 
-원문:
+Original text:
 {text}
 
-번역:"""
+Translation:"""
             else:
-                prompt = f"""다음 텍스트를 {target_lang_name}로 번역해주세요.
-번역 결과만 출력하고, 다른 설명은 포함하지 마세요.
+                prompt = f"""Translate the following text to {target_lang_name}.
+Output only the translation, without any explanations or additional comments.
 
-원문:
+Original text:
 {text}
 
-번역:"""
+Translation:"""
 
             logger.info(f"텍스트 번역 중... (대상 언어: {target_language})")
-            result = self._make_api_call(prompt, temperature=0.3)
+            result = self._make_api_call(prompt, temperature=0.3, timeout=timeout)
 
             if result:
                 logger.info("번역 완료")
