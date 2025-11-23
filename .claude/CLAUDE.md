@@ -50,24 +50,24 @@ A FastAPI-based YouTube video/playlist scraper API that provides universal tools
 ### Project Structure (Phase 3)
 ```
 utube-script-scrapper/
-├── api_main.py                      # FastAPI application entry point (210 lines)
+├── api_main.py                      # FastAPI application entry point (204 lines)
 ├── api/                             # API layer
 │   ├── __init__.py
 │   ├── routers/                     # FastAPI routers
 │   │   ├── __init__.py
-│   │   ├── video.py                 # Video endpoints (226 lines)
-│   │   ├── playlist.py              # Playlist endpoints (145 lines)
-│   │   └── ai.py                    # AI endpoints (242 lines)
-│   └── schemas/                     # Pydantic schemas
+│   │   ├── video.py                 # Video endpoints (271 lines)
+│   │   ├── playlist.py              # Playlist endpoints (168 lines)
+│   │   └── ai.py                    # AI endpoints (248 lines)
+│   └── schemas/                     # Pydantic v2 models
 │       ├── __init__.py
 │       ├── video.py                 # Video models (190 lines)
 │       ├── playlist.py              # Playlist models (68 lines)
 │       └── ai.py                    # AI models (145 lines)
 ├── core/                            # Core business logic layer
 │   ├── __init__.py
-│   ├── youtube_service.py           # YouTube data service (227 lines)
-│   ├── ai_service.py                # AI service (320 lines)
-│   └── formatter_service.py         # Formatter service (172 lines)
+│   ├── youtube_service.py           # YouTube data service (224 lines)
+│   ├── ai_service.py                # AI service (350 lines)
+│   └── formatter_service.py         # Formatter service (171 lines)
 ├── tools/                           # Agent-friendly tools
 │   ├── __init__.py
 │   ├── video_scraper.py             # Video scraping tool (165 lines)
@@ -76,17 +76,37 @@ utube-script-scrapper/
 │   └── topic_extractor.py           # Topic extraction tool (117 lines)
 ├── utils/                           # Utilities
 │   ├── __init__.py
-│   └── config.py                    # Settings management (59 lines)
+│   ├── config.py                    # Settings management (59 lines)
+│   ├── dependencies.py              # FastAPI dependency injection (68 lines)
+│   └── metadata.py                  # Metadata normalization (56 lines)
 ├── tests/                           # Comprehensive tests
 │   ├── api/                         # API tests
 │   ├── core/                        # Core service tests
 │   └── tools/                       # Tool tests
+├── docs/                            # Documentation
+│   ├── API_REFERENCE.md             # API endpoint reference
+│   ├── ARCHITECTURE.md              # Architecture documentation
+│   ├── CHANGELOG.md                 # Version history
+│   ├── DEVELOPMENT.md               # Development guide
+│   ├── FAQ.md                       # Frequently asked questions
+│   └── README.md                    # Documentation index
+├── examples/                        # Usage examples
+│   ├── code_samples/                # Code examples
+│   │   └── python_basic_usage.py    # Python API usage (249 lines)
+│   └── api_responses/               # Sample API responses
+│       ├── video_info_success.json
+│       ├── video_scrape_with_ai.json
+│       ├── playlist_info_success.json
+│       └── error_*.json
 ├── main.py                          # CLI entry point (legacy, 439 lines)
 ├── youtube_api.py                   # Legacy YouTube API (234 lines)
 ├── gemini_api.py                    # Legacy Gemini API (454 lines)
 ├── formatters.py                    # Legacy formatters (402 lines)
 ├── playlist_handler.py              # Legacy playlist handler (191 lines)
+├── Utube_scrapper.py                # Original legacy implementation
 ├── requirements.txt                 # Python dependencies
+├── pyproject.toml                   # Project metadata
+├── pytest.ini                       # Pytest configuration
 └── README.md                        # User documentation
 ```
 
@@ -171,9 +191,14 @@ schema = VideoScraperTool.get_tool_schema()  # For agent frameworks
 #### 4. Utils Layer (`utils/`)
 **Purpose**: Configuration and utilities
 
-- Environment-based configuration
-- Pydantic Settings
+- **config.py**: Environment-based configuration using Pydantic Settings
+- **dependencies.py**: FastAPI dependency injection helpers for services
+- **metadata.py**: Metadata normalization and validation utilities
+
+**Key Components**:
 - Centralized settings management
+- Service dependency injection with type annotations
+- Metadata standardization across the application
 
 ### Design Patterns
 
@@ -219,7 +244,7 @@ Business logic encapsulated in service classes:
 
 ## Module Reference
 
-### api_main.py (210 lines)
+### api_main.py (204 lines)
 **Purpose**: FastAPI application entry point
 
 **Key Components**:
@@ -228,6 +253,7 @@ Business logic encapsulated in service classes:
 - Router registration
 - Health check endpoints
 - Tool schema endpoints
+- Dependency injection setup
 
 **Running the API**:
 ```bash
@@ -250,20 +276,20 @@ uvicorn api_main:app --host 0.0.0.0 --port 8000
 
 ### api/routers/
 
-#### video.py (226 lines)
+#### video.py (271 lines)
 **Endpoints**:
 - `POST /video/info`: Get video metadata and transcript
 - `POST /video/scrape`: Full scraping with AI enhancements
 - `GET /video/metadata`: Metadata only
 - `GET /video/transcript`: Transcript only
 
-#### playlist.py (145 lines)
+#### playlist.py (168 lines)
 **Endpoints**:
 - `POST /playlist/info`: Get playlist info and videos
 - `GET /playlist/check`: Check if URL is playlist
 - `GET /playlist/videos`: Get video list only
 
-#### ai.py (242 lines)
+#### ai.py (248 lines)
 **Endpoints**:
 - `POST /ai/summary`: Generate text summary
 - `POST /ai/translate`: Translate text
@@ -298,7 +324,7 @@ uvicorn api_main:app --host 0.0.0.0 --port 8000
 
 ### core/
 
-#### youtube_service.py (227 lines)
+#### youtube_service.py (224 lines)
 **Purpose**: YouTube data extraction service
 
 **Key Methods**:
@@ -309,7 +335,7 @@ uvicorn api_main:app --host 0.0.0.0 --port 8000
 - `get_playlist_info(url)`: Get playlist info
 - `get_playlist_videos(url)`: Get playlist videos
 
-#### ai_service.py (320 lines)
+#### ai_service.py (350 lines)
 **Purpose**: AI operations service
 
 **Key Methods**:
@@ -318,13 +344,71 @@ uvicorn api_main:app --host 0.0.0.0 --port 8000
 - `extract_topics(transcript, num_topics)`: Extract topics
 - `enhance_transcript(...)`: Apply all AI features
 
-#### formatter_service.py (172 lines)
+#### formatter_service.py (171 lines)
 **Purpose**: Output formatting service
 
 **Key Methods**:
 - `get_formatter(format_choice)`: Get formatter instance
 - `save_to_file(metadata, transcript, ...)`: Save to file
 - `format_data(...)`: Format as string
+
+### utils/
+
+#### config.py (59 lines)
+**Purpose**: Application settings and configuration
+
+**Key Components**:
+- `Settings` class using Pydantic Settings
+- Environment variable loading (.env support)
+- Configuration for Gemini API, server settings, CORS
+
+**Example**:
+```python
+from utils.config import Settings
+
+settings = Settings()
+api_key = settings.gemini_api_key
+```
+
+#### dependencies.py (68 lines)
+**Purpose**: FastAPI dependency injection
+
+**Key Functions**:
+- `get_settings()`: Returns application settings (singleton)
+- `get_youtube_service()`: Creates YouTubeService instance
+- `get_ai_service()`: Creates AIService instance with settings
+- `get_formatter_service()`: Creates FormatterService instance
+
+**Type Aliases**:
+- `YouTubeServiceDep`: Annotated dependency type for YouTube service
+- `AIServiceDep`: Annotated dependency type for AI service
+- `FormatterServiceDep`: Annotated dependency type for Formatter service
+- `SettingsDep`: Annotated dependency type for Settings
+
+**Example**:
+```python
+from utils.dependencies import YouTubeServiceDep
+
+@router.post("/video/info")
+async def get_video_info(
+    request: VideoRequest,
+    youtube_service: YouTubeServiceDep
+):
+    # youtube_service is automatically injected
+    pass
+```
+
+#### metadata.py (56 lines)
+**Purpose**: Metadata normalization and validation
+
+**Key Functions**:
+- `normalize_metadata(metadata, video_id)`: Normalizes metadata to standard format
+- `validate_metadata(metadata)`: Validates and converts to VideoMetadata object
+
+**Usage**:
+- Ensures consistent metadata structure across the application
+- Provides default values for missing fields
+- Validates metadata against Pydantic schema
 
 ### tools/
 
@@ -360,6 +444,70 @@ uvicorn api_main:app --host 0.0.0.0 --port 8000
 - `run(text, num_topics, language)`: Extract topics
 - `is_available()`: Check if AI is available
 - `get_tool_schema()`: Schema for agents
+
+### docs/
+
+**Purpose**: Comprehensive project documentation
+
+The `docs/` directory contains detailed documentation for different aspects of the project:
+
+- **API_REFERENCE.md**: Complete API endpoint reference with request/response examples
+- **ARCHITECTURE.md**: Architectural overview, design patterns, and system diagrams
+- **CHANGELOG.md**: Version history and release notes
+- **DEVELOPMENT.md**: Development guide for contributors
+- **FAQ.md**: Frequently asked questions and troubleshooting
+- **README.md**: Documentation index and overview
+
+**Usage**: Refer to these documents for in-depth information about specific aspects of the project.
+
+### examples/
+
+**Purpose**: Usage examples and sample data
+
+#### code_samples/
+Contains code examples demonstrating API usage:
+
+- **python_basic_usage.py** (249 lines): Comprehensive Python examples showing:
+  - Getting video information
+  - Scraping with AI features
+  - Playlist processing
+  - AI summarization, translation, and topic extraction
+  - Error handling
+
+**Usage**:
+```python
+# Run the examples
+python examples/code_samples/python_basic_usage.py
+```
+
+#### api_responses/
+Contains sample API responses for reference:
+
+- `video_info_success.json`: Example video info response
+- `video_scrape_with_ai.json`: Example AI-enhanced scraping response
+- `playlist_info_success.json`: Example playlist info response
+- `error_*.json`: Various error response examples
+
+**Usage**: Use these as reference when building API clients or for testing.
+
+### Configuration Files
+
+#### pyproject.toml
+Project metadata and configuration following PEP 518 standards.
+
+```toml
+[project]
+name = "utube-script-scrapper"
+version = "0.1.0"
+requires-python = ">=3.13"
+```
+
+#### pytest.ini
+Pytest configuration with test discovery patterns and options:
+
+- Test paths: `tests/`
+- Markers: unit, integration, slow
+- Output options: verbose, short traceback
 
 ---
 
@@ -514,14 +662,18 @@ Each tool provides:
 ### Branch Naming Convention
 
 ```
-feature/<feature-description>-<session-id>
+claude/<feature-description>-<session-id>
 ```
 
 Examples:
-- `feature/fastapi-architecture-01EZhV9Zf6MNs7x4swCvdvAC`
-- `feature/add-caching-layer-ABC123XYZ`
+- `claude/fastapi-architecture-01EZhV9Zf6MNs7x4swCvdvAC`
+- `claude/claude-md-mibvetsy8wmnqv81-014iQX22WtZQx1JUs67CiVZ6`
+- `claude/add-caching-layer-ABC123XYZ`
 
-**IMPORTANT**: Session ID suffix is required for push operations.
+**IMPORTANT**:
+- Branch must start with `claude/` prefix
+- Session ID suffix is required for push operations
+- Format: `claude/<descriptive-name>-<session-id>`
 
 ### Development Steps
 
@@ -637,14 +789,21 @@ Refactor: Implement FastAPI architecture with agent-friendly tools
 
 **Push Operations**:
 ```bash
-# CRITICAL: Branch must start with 'feature/' and end with session ID
-git push -u origin feature/fastapi-architecture-SESSION_ID
+# CRITICAL: Branch must start with 'claude/' and end with session ID
+git push -u origin claude/feature-description-SESSION_ID
+
+# Example:
+git push -u origin claude/claude-md-mibvetsy8wmnqv81-014iQX22WtZQx1JUs67CiVZ6
 ```
 
 **Retry Logic** (for network failures):
 - Retry up to 4 times
 - Exponential backoff: 2s, 4s, 8s, 16s
 - Apply to: `git push`, `git fetch`, `git pull`
+
+**Important Notes**:
+- Push will fail with 403 HTTP code if branch doesn't follow naming convention
+- Branch must start with `claude/` and end with matching session ID
 
 ---
 
@@ -873,27 +1032,64 @@ Before committing, verify:
 
 ## Version History
 
-### Phase 3 (2025-11-18) - Current
+### Phase 3 (2025-11-18 to 2025-11-23) - Current
 
-**Latest Changes**: FastAPI architecture implementation
+**Latest Changes**: FastAPI architecture implementation with comprehensive documentation
 
 **Key Additions**:
-- `api_main.py`: FastAPI application (210 lines)
+- `api_main.py`: FastAPI application (204 lines)
 - `api/` directory: Routers and schemas
+  - Enhanced routers with dependency injection
+  - Pydantic v2 schemas with validation
 - `core/` directory: Service layer
+  - YouTubeService (224 lines)
+  - AIService (350 lines)
+  - FormatterService (171 lines)
 - `tools/` directory: Agent-friendly tools
-- `utils/` directory: Configuration
-- Comprehensive test suite
+  - OpenAI function calling compatible schemas
+- `utils/` directory: Configuration and utilities
+  - config.py: Settings management
+  - dependencies.py: FastAPI dependency injection
+  - metadata.py: Metadata normalization
+- `docs/` directory: Comprehensive documentation
+  - API_REFERENCE.md
+  - ARCHITECTURE.md
+  - CHANGELOG.md
+  - DEVELOPMENT.md
+  - FAQ.md
+- `examples/` directory: Usage examples and sample data
+  - code_samples/python_basic_usage.py (249 lines)
+  - api_responses/ with sample JSON responses
+- Configuration files
+  - pyproject.toml: Project metadata
+  - pytest.ini: Test configuration
+- Comprehensive test suite (81% coverage)
 - OpenAPI documentation
 - Agent framework compatibility
 
-**Branch**: `feature/refactor-fastapi-architecture-01EZhV9Zf6MNs7x4swCvdvAC`
+**Recent Commits** (as of 2025-11-23):
+- `8e84128`: Merge pull request #8
+- `f05c7fb`: Bug fix and refactoring
+- `5400e84`: Create comprehensive README
+- `2f2d57f`: Apply FastAPI best practices
 
-**Test Coverage**: 22 passing tests, API fully functional
+**Branch Naming**: `claude/<feature-description>-<session-id>`
+
+**Test Coverage**: 81%, API fully functional
 
 ### Previous Phases
 
-See git history for Phase 1 and Phase 2 details.
+**Phase 2** (Completed):
+- Playlist support
+- AI features (Gemini API)
+- CLI with argparse
+
+**Phase 1** (Completed):
+- Basic YouTube scraping
+- Multi-format output
+- Modular architecture
+
+See git history and CHANGELOG.md for detailed version history.
 
 ---
 
@@ -904,7 +1100,18 @@ See git history for Phase 1 and Phase 2 details.
 - **Tool Schemas**: http://localhost:8000/tools/schemas
 - **Issues**: See ISSUE_TRANSCRIPT_API_FIX.md
 - **User Guide**: README.md
+- **Detailed Documentation**: See `docs/` directory
+  - API Reference: docs/API_REFERENCE.md
+  - Architecture: docs/ARCHITECTURE.md
+  - Development: docs/DEVELOPMENT.md
+  - FAQ: docs/FAQ.md
+  - Changelog: docs/CHANGELOG.md
+- **Code Examples**: examples/code_samples/python_basic_usage.py
 
 ---
 
 *This document is maintained by AI assistants and should be updated when significant architectural changes are made.*
+
+**Last Updated**: 2025-11-23
+**Current Phase**: Phase 3 (FastAPI Architecture)
+**Branch Convention**: `claude/<feature-description>-<session-id>`
