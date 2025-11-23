@@ -165,14 +165,17 @@ class JsonFormatter(Formatter):
             # JSON 구조 생성
             data = {
                 "video_info": {
+                    "video_id": metadata.get('video_id', ''),  # 추가
                     "title": metadata['title'],
                     "channel": metadata['channel'],
-                    "upload_date": metadata['upload_date'],
-                    "duration": metadata['duration'],
-                    "duration_formatted": format_timestamp(metadata['duration']),
-                    "view_count": metadata['view_count']
+                    "upload_date": metadata.get('upload_date'),
+                    "duration": metadata.get('duration', 0),
+                    "duration_formatted": format_timestamp(metadata.get('duration', 0)),
+                    "view_count": metadata.get('view_count', 0),
+                    "like_count": metadata.get('like_count'),  # 추가
+                    "thumbnail_url": metadata.get('thumbnail_url'),  # 추가
                 },
-                "description": metadata['description'],
+                "description": metadata.get('description', ''),
                 "transcript": [
                     {
                         "timestamp": format_timestamp(entry['start']),

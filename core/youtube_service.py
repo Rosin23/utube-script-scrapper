@@ -48,13 +48,17 @@ class YouTubeService:
             video_id: YouTube 비디오 ID
 
         Returns:
-            메타데이터 딕셔너리
-
-        Raises:
-            Exception: 메타데이터 추출 실패 시
+            메타데이터 딕셔너리 (VideoMetadata 스키마와 일치)
         """
         try:
-            metadata = get_video_metadata(video_id)
+            # video_id를 URL로 변환
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
+            metadata = get_video_metadata(video_url)
+            
+            # video_id가 없으면 추가
+            if 'video_id' not in metadata or not metadata['video_id']:
+                metadata['video_id'] = video_id
+                
             logger.info(f"Successfully retrieved metadata for video {video_id}")
             return metadata
         except Exception as e:

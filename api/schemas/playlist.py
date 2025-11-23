@@ -2,7 +2,7 @@
 플레이리스트 관련 Pydantic 스키마
 """
 
-from typing import Optional, List
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -33,7 +33,8 @@ class PlaylistVideoInfo(BaseModel):
                 "video_id": "dQw4w9WgXcQ",
                 "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                 "title": "Sample Video",
-                "index": 1
+                "index": 1,
+                "position": 0  # 0-based position (YouTube API 문서와 일치)
             }
         }
     )
@@ -41,7 +42,8 @@ class PlaylistVideoInfo(BaseModel):
     video_id: str = Field(..., description="비디오 ID")
     url: str = Field(..., description="비디오 URL")
     title: str = Field(..., description="비디오 제목")
-    index: Optional[int] = Field(None, description="플레이리스트 내 순서")
+    index: Optional[int] = Field(None, description="플레이리스트 내 순서 (1-based, 사용자 친화적)")
+    position: Optional[int] = Field(None, description="플레이리스트 내 위치 (0-based, YouTube API 표준)")
 
 
 class PlaylistInfo(BaseModel):

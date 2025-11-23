@@ -72,24 +72,37 @@ def get_video_metadata(url: str) -> Dict[str, str]:
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
+            
+            # video_id 추출
+            video_id = info.get('id', '')
+            if not video_id:
+                # URL에서 추출 시도
+                video_id = extract_video_id(url) or ''
 
             return {
+                'video_id': video_id,
                 'title': info.get('title', 'Unknown Title'),
                 'description': info.get('description', 'No description available'),
                 'channel': info.get('channel', 'Unknown Channel'),
                 'upload_date': info.get('upload_date', 'Unknown Date'),
                 'duration': info.get('duration', 0),
                 'view_count': info.get('view_count', 0),
+                'like_count': info.get('like_count'),  # 추가
+                'thumbnail_url': info.get('thumbnail') or info.get('thumbnails', [{}])[0].get('url') if info.get('thumbnails') else None,  # 추가
             }
     except Exception as e:
         print(f"메타데이터 추출 오류: {e}")
+        video_id = extract_video_id(url) or ''
         return {
+            'video_id': video_id,
             'title': 'Unknown Title',
             'description': 'No description available',
             'channel': 'Unknown Channel',
             'upload_date': 'Unknown Date',
             'duration': 0,
             'view_count': 0,
+            'like_count': None,
+            'thumbnail_url': None,
         }
 
 

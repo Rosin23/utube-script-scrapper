@@ -20,6 +20,7 @@ from utils.dependencies import (
     AIServiceDep,
     FormatterServiceDep
 )
+from utils.metadata import normalize_metadata, validate_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +52,13 @@ async def get_video_info(
         )
 
         # 응답 생성
+        metadata_dict = normalize_metadata(
+            result['metadata'],
+            video_id=result.get('video_id', '')
+        )
+
         return VideoResponse(
-            metadata=VideoMetadata(**result['metadata']),
+            metadata=validate_metadata(metadata_dict),
             transcript=[TranscriptEntry(**entry) for entry in result['transcript']],
             transcript_language=request.languages[0] if request.languages else None
         )
@@ -99,49 +105,96 @@ async def scrape_video(
         translation = None
         topics = None
 
-        if request.enable_summary:
+        # AI 서비스 사용 가능 여부 확인
+        ai_available = ai_service.is_available()
+        if not ai_available and (request.enable_summary or request.enable_translation or request.enable_topics):
+            logger.warning(
+                "AI features were requested but AI service is not available. "
+                "Please check your Gemini API key configuration."
+            )
+
+        # languages 안전 처리
+        default_language = 'ko'
+        if request.languages and len(request.languages) > 0:
+            default_language = request.languages[0]
+
+        if request.enable_summary and ai_available:
             logger.info("Generating summary...")
-            summary = ai_service.generate_summary(
-                transcript=transcript,
-                max_points=request.summary_max_points,
-                language=request.languages[0] if request.languages else 'ko'
-            )
+            try:
+                summary = ai_service.generate_summary(
+                    transcript=transcript,
+                    max_points=request.summary_max_points,
+                    language=default_language
+                )
+            except Exception as e:
+                logger.error(f"Failed to generate summary: {e}")
+                summary = None
 
-        if request.enable_translation and request.target_language:
+        if request.enable_translation and request.target_language and ai_available:
             logger.info(f"Translating to {request.target_language}...")
-            translation = ai_service.translate_transcript(
-                transcript=transcript,
-                target_language=request.target_language
-            )
+            try:
+                translation = ai_service.translate_transcript(
+                    transcript=transcript,
+                    target_language=request.target_language
+                )
+            except Exception as e:
+                logger.error(f"Failed to translate: {e}")
+                translation = None
 
-        if request.enable_topics:
+        if request.enable_topics and ai_available:
             logger.info("Extracting topics...")
-            topics = ai_service.extract_topics(
-                transcript=transcript,
-                num_topics=request.num_topics,
-                language=request.languages[0] if request.languages else 'ko'
-            )
+            try:
+                topics = ai_service.extract_topics(
+                    transcript=transcript,
+                    num_topics=request.num_topics,
+                    language=default_language
+                )
+            except Exception as e:
+                logger.error(f"Failed to extract topics: {e}")
+                topics = None
 
         # 3. 파일로 저장 (선택적)
         output_file = None
         if request.output_format:
-            video_title = metadata.get('title', 'video').replace('/', '_')
-            output_file = formatter_service.save_to_file(
-                metadata=metadata,
-                transcript=transcript,
-                output_file=f"output/{video_title}",
-                format_choice=request.output_format,
-                summary=summary,
-                translation=translation,
-                key_topics=topics
-            )
-            logger.info(f"Saved to file: {output_file}")
+            try:
+                # 안전한 파일명 생성
+                video_title = metadata.get('title', 'video')
+                if not video_title or video_title.strip() == '':
+                    video_title = 'video'
+                
+                import re
+                safe_title = re.sub(r'[<>:"/\\|?*]', '_', video_title)
+                safe_title = safe_title.strip()[:100]
+                
+                video_id = video_info.get('video_id', '')
+                if video_id:
+                    safe_title = f"{safe_title}_{video_id}"
+                
+                output_file = formatter_service.save_to_file(
+                    metadata=metadata,
+                    transcript=transcript,
+                    output_file=f"output/{safe_title}",
+                    format_choice=request.output_format,
+                    summary=summary,
+                    translation=translation,
+                    key_topics=topics
+                )
+                logger.info(f"Saved to file: {output_file}")
+            except Exception as e:
+                logger.error(f"Failed to save file: {e}")
+                # 파일 저장 실패해도 응답은 계속 진행
+                output_file = None
 
         # 4. 응답 생성
+        metadata_dict = normalize_metadata(
+            video_info['metadata'],
+            video_id=video_info.get('video_id', '')
+        )
+
         return VideoScrapeResponse(
-            metadata=VideoMetadata(**metadata),
+            metadata=validate_metadata(metadata_dict),
             transcript=[TranscriptEntry(**entry) for entry in transcript],
-            transcript_language=request.languages[0] if request.languages else None,
+            transcript_language=default_language,
             summary=summary,
             translation=translation,
             key_topics=topics,
@@ -152,7 +205,7 @@ async def scrape_video(
         logger.error(f"Invalid request: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Failed to scrape video: {e}")
+        logger.error(f"Failed to scrape video: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to scrape video: {str(e)}")
 
 

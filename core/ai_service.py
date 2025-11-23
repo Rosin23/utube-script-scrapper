@@ -6,8 +6,16 @@ Gemini API를 사용한 AI 기능을 제공하는 서비스 레이어
 from typing import Optional, List, Dict
 import logging
 import time
+import os
 
 from gemini_api import GeminiClient, is_gemini_available, GeminiAPIError
+from utils.config import settings
+
+# google-genai 패키지 import 확인
+try:
+    from google import genai
+except ImportError:
+    genai = None
 
 logger = logging.getLogger(__name__)
 
@@ -22,37 +30,65 @@ class AIService:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-2.0-flash-exp",
+        model_name: Optional[str] = None,
         retry_count: int = 3,
         retry_delay: float = 1.0
     ):
         """
         AI 서비스 초기화
-
+        
         Args:
-            api_key: Gemini API 키 (None이면 환경변수에서 읽음)
-            model_name: 사용할 모델 이름
+            api_key: Gemini API 키 (None이면 Settings에서 로드)
+            model_name: 사용할 모델 이름 (None이면 Settings에서 로드)
             retry_count: 재시도 횟수
             retry_delay: 재시도 지연 시간 (초)
         """
         self.client = None
         self.available = False
-
-        if is_gemini_available():
-            try:
-                self.client = GeminiClient(
-                    api_key=api_key,
-                    model_name=model_name,
-                    retry_count=retry_count,
-                    retry_delay=retry_delay
-                )
-                self.available = True
-                logger.info(f"AI service initialized with model: {model_name}")
-            except Exception as e:
-                logger.warning(f"Failed to initialize AI service: {e}")
-                self.available = False
-        else:
-            logger.warning("Gemini API not available")
+        
+        # SDK 확인
+        if genai is None:
+            logger.warning(
+                "google-genai 패키지가 설치되지 않았습니다. "
+                "'pip install google-genai'로 설치하세요."
+            )
+            return
+        
+        # API 키 확인 (우선순위: 파라미터 > Settings > 환경 변수)
+        effective_api_key = (
+            api_key or 
+            settings.gemini_api_key or 
+            os.getenv('GEMINI_API_KEY') or 
+            os.getenv('GOOGLE_API_KEY')
+        )
+        
+        if not effective_api_key:
+            logger.warning(
+                "Gemini API 키가 설정되지 않았습니다. "
+                ".env 파일에 GEMINI_API_KEY를 설정하거나 "
+                "환경 변수로 설정하세요."
+            )
+            return
+        
+        # 모델 이름 확인
+        effective_model_name = model_name or settings.gemini_model_name
+        
+        # 클라이언트 초기화 시도
+        try:
+            self.client = GeminiClient(
+                api_key=effective_api_key,
+                model_name=effective_model_name,
+                retry_count=retry_count,
+                retry_delay=retry_delay
+            )
+            self.available = True
+            logger.info(f"AI service initialized with model: {effective_model_name}")
+        except GeminiAPIError as e:
+            logger.warning(f"Failed to initialize AI service: {e}")
+            self.available = False
+        except Exception as e:
+            logger.warning(f"Failed to initialize AI service (unexpected error): {e}")
+            self.available = False
 
     def is_available(self) -> bool:
         """

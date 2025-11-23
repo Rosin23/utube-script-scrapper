@@ -3,7 +3,8 @@ yt-dlp>=2024.3.10
 youtube-transcript-api>=0.6.2
 
 # AI features (Phase 2)
-google-generativeai>=0.3.0
+# 새로운 google-genai 패키지 사용
+google-genai>=0.2.0
 
 # FastAPI and web framework dependencies
 fastapi>=0.104.0
