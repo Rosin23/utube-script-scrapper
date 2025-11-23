@@ -6,6 +6,8 @@ This document provides comprehensive guidance for AI assistants working with the
 - [Repository Overview](#repository-overview)
 - [Architecture & Design Patterns](#architecture--design-patterns)
 - [Module Reference](#module-reference)
+- [API Reference](#api-reference)
+- [Tools for Agent Frameworks](#tools-for-agent-frameworks)
 - [Development Workflow](#development-workflow)
 - [Testing Conventions](#testing-conventions)
 - [Git Workflow](#git-workflow)
@@ -18,283 +20,473 @@ This document provides comprehensive guidance for AI assistants working with the
 ## Repository Overview
 
 ### Purpose
-A Python-based YouTube video/playlist scraper that extracts metadata, descriptions, and timestamped transcripts with AI-powered enhancements (summarization, translation, topic extraction).
+A FastAPI-based YouTube video/playlist scraper API that provides universal tools for AI agent frameworks. Offers metadata extraction, transcripts, and AI-powered enhancements (summarization, translation, topic extraction).
 
-### Key Features (Phase 2)
-1. **YouTube Playlist Support**: Automatic detection and batch processing of playlists using yt-dlp
-2. **AI Summarization**: Gemini API integration for automatic transcript summarization
-3. **Multi-language Support**: User-configurable subtitle language preferences
-4. **Translation**: AI-powered transcript translation to target languages
-5. **Topic Extraction**: Automatic extraction of key topics from video content
-6. **Multi-format Output**: TXT, JSON, XML, Markdown formatters
+### Key Features (Phase 3 - FastAPI Architecture)
+1. **RESTful API**: FastAPI-based API for universal access by any agent framework
+2. **Agent-Friendly Tools**: Decoupled tools with OpenAI function calling compatible schemas
+3. **YouTube Playlist Support**: Automatic detection and batch processing
+4. **AI Summarization**: Gemini API integration for automatic transcript summarization
+5. **Multi-language Support**: User-configurable subtitle language preferences
+6. **Translation**: AI-powered transcript translation
+7. **Topic Extraction**: Automatic extraction of key topics
+8. **Multi-format Output**: TXT, JSON, XML, Markdown formatters
+9. **OpenAPI Documentation**: Auto-generated API docs at `/docs`
 
 ### Technology Stack
 - **Python 3.11+**
+- **FastAPI**: Modern async web framework
+- **Uvicorn**: ASGI server
+- **Pydantic v2**: Data validation and settings
 - **Core Libraries**: yt-dlp, youtube-transcript-api
 - **AI Integration**: google-generativeai (Gemini API v1beta)
-- **Testing**: pytest, pytest-mock, pytest-cov
-- **Design Patterns**: Strategy Pattern, Dependency Injection
+- **Testing**: pytest, pytest-mock, pytest-cov, httpx
+- **Design Patterns**: Layered Architecture, Strategy Pattern, Dependency Injection
 
 ---
 
 ## Architecture & Design Patterns
 
-### Project Structure
+### Project Structure (Phase 3)
 ```
 utube-script-scrapper/
-├── main.py                      # Entry point with argparse CLI (439 lines)
-├── youtube_api.py               # YouTube API integration (234 lines)
-├── formatters.py                # Output formatters - Strategy Pattern (402 lines)
-├── playlist_handler.py          # Playlist detection & processing (191 lines)
-├── gemini_api.py                # Gemini API v1beta integration (454 lines)
-├── Utube_scrapper.py            # Legacy compatibility script (535 lines)
-├── requirements.txt             # Python dependencies
-├── pytest.ini                   # pytest configuration
-├── tests/                       # Unit tests directory
+├── api_main.py                      # FastAPI application entry point (210 lines)
+├── api/                             # API layer
 │   ├── __init__.py
-│   ├── test_youtube_api.py      # YouTube API tests
-│   ├── test_formatters.py       # Formatter tests
-│   ├── test_playlist_handler.py # Playlist handler tests
-│   └── test_gemini_api.py       # Gemini API tests (34 tests, 88% coverage)
-├── README.md                    # User documentation
-├── ISSUE_TRANSCRIPT_API_FIX.md  # Known issues & troubleshooting
-└── CLAUDE.md                    # This file
+│   ├── routers/                     # FastAPI routers
+│   │   ├── __init__.py
+│   │   ├── video.py                 # Video endpoints (226 lines)
+│   │   ├── playlist.py              # Playlist endpoints (145 lines)
+│   │   └── ai.py                    # AI endpoints (242 lines)
+│   └── schemas/                     # Pydantic schemas
+│       ├── __init__.py
+│       ├── video.py                 # Video models (190 lines)
+│       ├── playlist.py              # Playlist models (68 lines)
+│       └── ai.py                    # AI models (145 lines)
+├── core/                            # Core business logic layer
+│   ├── __init__.py
+│   ├── youtube_service.py           # YouTube data service (227 lines)
+│   ├── ai_service.py                # AI service (320 lines)
+│   └── formatter_service.py         # Formatter service (172 lines)
+├── tools/                           # Agent-friendly tools
+│   ├── __init__.py
+│   ├── video_scraper.py             # Video scraping tool (165 lines)
+│   ├── summarizer.py                # Summarization tool (115 lines)
+│   ├── translator.py                # Translation tool (127 lines)
+│   └── topic_extractor.py           # Topic extraction tool (117 lines)
+├── utils/                           # Utilities
+│   ├── __init__.py
+│   └── config.py                    # Settings management (59 lines)
+├── tests/                           # Comprehensive tests
+│   ├── api/                         # API tests
+│   ├── core/                        # Core service tests
+│   └── tools/                       # Tool tests
+├── main.py                          # CLI entry point (legacy, 439 lines)
+├── youtube_api.py                   # Legacy YouTube API (234 lines)
+├── gemini_api.py                    # Legacy Gemini API (454 lines)
+├── formatters.py                    # Legacy formatters (402 lines)
+├── playlist_handler.py              # Legacy playlist handler (191 lines)
+├── requirements.txt                 # Python dependencies
+└── README.md                        # User documentation
 ```
+
+### Architectural Layers
+
+#### 1. API Layer (`api/`)
+**Purpose**: RESTful API endpoints using FastAPI
+
+- **Routers** (`api/routers/`): Endpoint definitions
+  - `video.py`: Video scraping endpoints
+  - `playlist.py`: Playlist processing endpoints
+  - `ai.py`: AI enhancement endpoints
+
+- **Schemas** (`api/schemas/`): Pydantic v2 models for validation
+  - Input/output validation
+  - Automatic OpenAPI schema generation
+  - Type safety
+
+**Example**:
+```python
+from fastapi import APIRouter
+from api.schemas.video import VideoRequest, VideoResponse
+
+router = APIRouter(prefix="/video", tags=["video"])
+
+@router.post("/info", response_model=VideoResponse)
+async def get_video_info(request: VideoRequest):
+    # Implementation
+    pass
+```
+
+#### 2. Core Layer (`core/`)
+**Purpose**: Business logic and service orchestration
+
+- **YouTubeService**: YouTube data extraction
+- **AIService**: AI operations (summary, translation, topics)
+- **FormatterService**: Output formatting
+
+**Benefits**:
+- Decoupled from API layer
+- Reusable in CLI and API contexts
+- Easier to test
+- Clear separation of concerns
+
+**Example**:
+```python
+from core import YouTubeService
+
+service = YouTubeService()
+video_info = service.get_video_info(
+    video_url="https://youtube.com/watch?v=...",
+    languages=["ko", "en"]
+)
+```
+
+#### 3. Tools Layer (`tools/`)
+**Purpose**: Agent framework compatible tools
+
+Each tool provides:
+- Clear input/output interface
+- OpenAI function calling schema
+- Independent operation
+- Error handling
+
+**Compatible Frameworks**:
+- OpenAI Function Calling
+- Claude Code Tools
+- LangChain
+- AutoGPT
+- BabyAGI
+- Custom agent frameworks
+
+**Example**:
+```python
+from tools import VideoScraperTool
+
+tool = VideoScraperTool()
+result = tool.run(video_url="https://youtube.com/watch?v=...")
+schema = VideoScraperTool.get_tool_schema()  # For agent frameworks
+```
+
+#### 4. Utils Layer (`utils/`)
+**Purpose**: Configuration and utilities
+
+- Environment-based configuration
+- Pydantic Settings
+- Centralized settings management
 
 ### Design Patterns
 
-#### 1. Strategy Pattern (Formatters)
-**Location**: `formatters.py`
-
-The formatter system uses the Strategy Pattern to allow interchangeable output formats:
-
-```python
-# Abstract base class
-class Formatter(ABC):
-    @abstractmethod
-    def save(self, metadata, transcript, output_file, summary=None,
-             translation=None, key_topics=None) -> None:
-        pass
-
-# Concrete implementations
-class TxtFormatter(Formatter): ...
-class JsonFormatter(Formatter): ...
-class XmlFormatter(Formatter): ...
-class MarkdownFormatter(Formatter): ...
-
-# Factory function
-def get_formatter(choice: str) -> Formatter:
-    formatters = {
-        '1': TxtFormatter,
-        '2': JsonFormatter,
-        '3': XmlFormatter,
-        '4': MarkdownFormatter,
-    }
-    return formatters.get(choice, TxtFormatter)()
+#### 1. Layered Architecture
+**Implementation**:
+```
+User/Agent → API Layer → Core Layer → External Services
+                ↓
+            Tools Layer (standalone)
 ```
 
 **Benefits**:
-- Easy to add new output formats without modifying existing code (OCP)
-- Each formatter encapsulates its own logic (SRP)
-- Client code works with the abstract interface
+- Clear separation of concerns
+- Each layer has specific responsibilities
+- Easy to modify individual layers
+- Better testability
 
-#### 2. Dependency Injection
-**Location**: Throughout the codebase
+#### 2. Strategy Pattern (Formatters)
+**Location**: `formatters.py` (legacy), `core/formatter_service.py`
 
-Modules are loosely coupled through function parameters rather than hard-coded dependencies:
+Continued from Phase 2 implementation with service wrapper.
 
+#### 3. Dependency Injection
+**Throughout the codebase**
+
+Services and tools accept dependencies as parameters:
 ```python
-# Good: Dependencies are injected
-def process_video(video_url, gemini_client=None, formatter=None):
-    ...
-
-# Tests can easily inject mocks
-def test_process_video():
-    mock_client = Mock()
-    process_video(url, gemini_client=mock_client)
+class AIService:
+    def __init__(self, api_key=None, model_name="gemini-2.0-flash-exp"):
+        # Inject configuration
+        pass
 ```
 
-#### 3. API Client Pattern
-**Location**: `gemini_api.py`
+#### 4. Service Layer Pattern
+**Location**: `core/` directory
 
-The Gemini API integration uses a client class with retry logic and error handling:
-
-```python
-class GeminiClient:
-    def __init__(self, api_key, model_name, retry_count=3, retry_delay=1.0):
-        # Client initialization with genai.Client() (v1beta API)
-
-    def _make_api_call(self, prompt, temperature=0.7):
-        # Retry logic with exponential backoff
-
-    def generate_summary(self, transcript, max_points=5, language='ko'):
-        # High-level API methods
-```
-
-### Clean Code Principles
-
-The codebase follows SOLID principles:
-
-1. **Single Responsibility Principle (SRP)**
-   - Each module has one clear purpose
-   - `youtube_api.py`: YouTube data extraction
-   - `gemini_api.py`: AI operations
-   - `formatters.py`: Output formatting
-   - `playlist_handler.py`: Playlist processing
-
-2. **Open-Closed Principle (OCP)**
-   - New formatters can be added without modifying existing code
-   - Strategy Pattern enables extension
-
-3. **Dependency Inversion Principle (DIP)**
-   - High-level modules depend on abstractions (Formatter ABC)
-   - Loose coupling through dependency injection
-
-4. **DRY (Don't Repeat Yourself)**
-   - Shared functionality extracted to utility functions
-   - Reusable components across modules
+Business logic encapsulated in service classes:
+- Separates API concerns from business logic
+- Reusable across different interfaces (API, CLI)
+- Easier unit testing
 
 ---
 
 ## Module Reference
 
-### main.py (439 lines)
-**Purpose**: Entry point with comprehensive CLI using argparse
+### api_main.py (210 lines)
+**Purpose**: FastAPI application entry point
 
-**Key Functions**:
-- `parse_arguments()`: CLI argument parsing with argparse
-- `display_banner()`: Program banner display
-- `get_output_filename()`: Output filename generation
-- `process_single_video()`: Single video processing logic
-- `main()`: Main execution flow
+**Key Components**:
+- FastAPI app initialization
+- CORS middleware configuration
+- Router registration
+- Health check endpoints
+- Tool schema endpoints
 
-**CLI Arguments**:
+**Running the API**:
 ```bash
-# Positional
-url                  # YouTube video or playlist URL
-format_choice        # Output format (1-4)
+# Development mode with auto-reload
+python api_main.py --reload
 
-# Optional
---lang LANG [LANG ...]   # Subtitle language priority (default: ko en)
---summary                # Enable AI summarization
---translate LANG         # Translate to target language
---topics N               # Extract N key topics
---format {1,2,3,4}       # Output format (alternative to positional)
---max-videos N           # Limit playlist processing
+# Production mode
+python api_main.py
+
+# Custom host/port
+uvicorn api_main:app --host 0.0.0.0 --port 8000
 ```
 
-**Example Usage**:
+**Endpoints**:
+- `GET /`: API information
+- `GET /health`: Health check
+- `GET /tools/schemas`: Agent framework tool schemas
+- `GET /docs`: Interactive API documentation
+- `GET /openapi.json`: OpenAPI specification
+
+### api/routers/
+
+#### video.py (226 lines)
+**Endpoints**:
+- `POST /video/info`: Get video metadata and transcript
+- `POST /video/scrape`: Full scraping with AI enhancements
+- `GET /video/metadata`: Metadata only
+- `GET /video/transcript`: Transcript only
+
+#### playlist.py (145 lines)
+**Endpoints**:
+- `POST /playlist/info`: Get playlist info and videos
+- `GET /playlist/check`: Check if URL is playlist
+- `GET /playlist/videos`: Get video list only
+
+#### ai.py (242 lines)
+**Endpoints**:
+- `POST /ai/summary`: Generate text summary
+- `POST /ai/translate`: Translate text
+- `POST /ai/topics`: Extract topics
+- `POST /ai/enhance`: Apply all AI features
+- `GET /ai/health`: Check AI service status
+
+### api/schemas/
+
+#### video.py (190 lines)
+**Models**:
+- `VideoRequest`: Video info request
+- `VideoResponse`: Video info response
+- `VideoMetadata`: Video metadata
+- `TranscriptEntry`: Single transcript entry
+- `VideoScrapeRequest`: Full scraping request
+- `VideoScrapeResponse`: Full scraping response
+
+#### playlist.py (68 lines)
+**Models**:
+- `PlaylistRequest`: Playlist request
+- `PlaylistResponse`: Playlist response
+- `PlaylistInfo`: Playlist metadata
+- `PlaylistVideoInfo`: Video in playlist
+
+#### ai.py (145 lines)
+**Models**:
+- `SummaryRequest/Response`: Summarization
+- `TranslationRequest/Response`: Translation
+- `TopicExtractionRequest/Response`: Topic extraction
+- `AIEnhancementRequest/Response`: Combined AI features
+
+### core/
+
+#### youtube_service.py (227 lines)
+**Purpose**: YouTube data extraction service
+
+**Key Methods**:
+- `extract_video_id(url)`: Extract video ID from URL
+- `get_video_metadata(video_id)`: Get metadata
+- `get_transcript(video_id, languages)`: Get transcript
+- `get_video_info(url)`: Get full video info
+- `get_playlist_info(url)`: Get playlist info
+- `get_playlist_videos(url)`: Get playlist videos
+
+#### ai_service.py (320 lines)
+**Purpose**: AI operations service
+
+**Key Methods**:
+- `generate_summary(transcript, max_points, language)`: Generate summary
+- `translate_text(text, target_language)`: Translate text
+- `extract_topics(transcript, num_topics)`: Extract topics
+- `enhance_transcript(...)`: Apply all AI features
+
+#### formatter_service.py (172 lines)
+**Purpose**: Output formatting service
+
+**Key Methods**:
+- `get_formatter(format_choice)`: Get formatter instance
+- `save_to_file(metadata, transcript, ...)`: Save to file
+- `format_data(...)`: Format as string
+
+### tools/
+
+#### video_scraper.py (165 lines)
+**Purpose**: Video scraping tool for agents
+
+**Methods**:
+- `run(video_url, languages)`: Scrape video
+- `get_metadata_only(url)`: Metadata only
+- `get_transcript_only(url)`: Transcript only
+- `get_tool_schema()`: Schema for agents
+
+#### summarizer.py (115 lines)
+**Purpose**: Text summarization tool
+
+**Methods**:
+- `run(text, max_points, language)`: Generate summary
+- `is_available()`: Check if AI is available
+- `get_tool_schema()`: Schema for agents
+
+#### translator.py (127 lines)
+**Purpose**: Translation tool
+
+**Methods**:
+- `run(text, target_language)`: Translate text
+- `get_supported_languages()`: Language list
+- `get_tool_schema()`: Schema for agents
+
+#### topic_extractor.py (117 lines)
+**Purpose**: Topic extraction tool
+
+**Methods**:
+- `run(text, num_topics, language)`: Extract topics
+- `is_available()`: Check if AI is available
+- `get_tool_schema()`: Schema for agents
+
+---
+
+## API Reference
+
+### Starting the API Server
+
 ```bash
-# Single video with summary
-python main.py VIDEO_URL --summary
+# Development with auto-reload
+python api_main.py --reload
 
-# Playlist with all AI features
-python main.py PLAYLIST_URL --summary --translate en --topics 5 --format 2
+# Production
+python api_main.py
+
+# Using uvicorn directly
+uvicorn api_main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### youtube_api.py (234 lines)
-**Purpose**: YouTube data extraction using yt-dlp and youtube-transcript-api
+### API Documentation
 
-**Key Functions**:
-- `extract_video_id(url: str) -> Optional[str]`: Extract video ID from various URL formats
-- `get_video_metadata(video_id: str) -> Dict`: Fetch video metadata using yt-dlp
-- `get_transcript_with_timestamps(video_id, languages, prefer_manual) -> List[Dict]`: Fetch timestamped transcripts
-- `format_timestamp(seconds: float) -> str`: Convert seconds to HH:MM:SS format
+Once running, visit:
+- **Interactive Docs**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **OpenAPI Schema**: http://localhost:8000/openapi.json
 
-**Important Notes**:
-- Uses `youtube-transcript-api` for transcript extraction
-- Supports multiple language preferences (fallback chain)
-- Compatible with both 0.x and 1.x versions of youtube-transcript-api
-- See `ISSUE_TRANSCRIPT_API_FIX.md` for known issues
+### Example API Calls
 
-### formatters.py (402 lines)
-**Purpose**: Output formatting using Strategy Pattern
-
-**Class Hierarchy**:
-```
-Formatter (ABC)
-├── TxtFormatter      # Structured text format
-├── JsonFormatter     # JSON format
-├── XmlFormatter      # XML format
-└── MarkdownFormatter # Markdown format
+#### Get Video Info
+```bash
+curl -X POST "http://localhost:8000/video/info" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "languages": ["ko", "en"],
+    "prefer_manual": true
+  }'
 ```
 
-**All Formatters Support**:
-- Video metadata (title, channel, views, date, etc.)
-- Timestamped transcripts
-- AI-generated summary (optional)
-- Translation (optional)
-- Key topics (optional)
+#### Scrape Video with AI
+```bash
+curl -X POST "http://localhost:8000/video/scrape" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "enable_summary": true,
+    "summary_max_points": 5,
+    "enable_translation": true,
+    "target_language": "en",
+    "enable_topics": true,
+    "num_topics": 5
+  }'
+```
 
-**Adding New Formatters**:
-1. Create class inheriting from `Formatter`
-2. Implement `save()` method with signature:
-   ```python
-   def save(self, metadata, transcript, output_file,
-            summary=None, translation=None, key_topics=None) -> None:
-   ```
-3. Add to factory function `get_formatter()`
+#### Generate Summary
+```bash
+curl -X POST "http://localhost:8000/ai/summary" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Long text to summarize...",
+    "max_points": 5,
+    "language": "ko"
+  }'
+```
 
-### playlist_handler.py (191 lines)
-**Purpose**: Playlist detection and video URL extraction
+---
 
-**Key Functions**:
-- `PlaylistHandler.is_playlist_url(url) -> bool`: Detect playlist URLs
-- `PlaylistHandler.extract_playlist_id(url) -> Optional[str]`: Extract playlist ID
-- `PlaylistHandler.get_playlist_info(url) -> Optional[Dict]`: Fetch playlist metadata
-- `PlaylistHandler.get_video_urls_from_playlist(url) -> List[Dict]`: Extract all video URLs
-- `process_playlist_or_video(url) -> Dict`: Unified processor for playlists/videos
+## Tools for Agent Frameworks
 
-**Return Format**:
+### Getting Tool Schemas
+
+```bash
+curl http://localhost:8000/tools/schemas
+```
+
+Returns OpenAI function calling compatible schemas for all tools.
+
+### Using Tools in Agent Code
+
+#### OpenAI Function Calling
 ```python
-{
-    'type': 'playlist' | 'video' | 'unknown',
-    'videos': [{'id': str, 'url': str, 'title': str}, ...],
-    'playlist_info': {'title': str, 'uploader': str, 'video_count': int} | None
-}
-```
+import openai
+import requests
 
-### gemini_api.py (454 lines)
-**Purpose**: Gemini API v1beta integration for AI features
+# Get tool schemas
+response = requests.get("http://localhost:8000/tools/schemas")
+tools = response.json()["tools"]
 
-**CRITICAL**: Uses official Gemini API v1beta style
-```python
-from google import genai
-from google.genai import types
-
-client = genai.Client()
-response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents=prompt,
-    config=types.GenerateContentConfig(temperature=0.7)
+# Use with OpenAI
+completion = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Scrape this YouTube video..."}],
+    tools=tools
 )
 ```
 
-**Key Class**: `GeminiClient`
+#### Claude Code
+```python
+# Claude can directly call the API endpoints
+# The tools are exposed as RESTful endpoints
+```
 
-**Methods**:
-- `__init__(api_key, model_name, retry_count, retry_delay)`: Initialize client
-- `_make_api_call(prompt, temperature) -> str`: Low-level API call with retry logic
-- `generate_summary(transcript, max_points, language) -> str`: Generate summary
-- `translate_text(text, target_language, source_language) -> str`: Translate text
-- `translate_transcript(transcript, target_language) -> str`: Translate full transcript
-- `extract_key_topics(transcript, num_topics, language) -> List[str]`: Extract topics
+#### LangChain
+```python
+from langchain.tools import StructuredTool
+from tools import VideoScraperTool
 
-**Environment Variables**:
-- `GEMINI_API_KEY` (primary)
-- `GOOGLE_API_KEY` (fallback)
+tool = VideoScraperTool()
 
-**Supported Models**:
-- `gemini-2.0-flash-exp` (default)
-- `gemini-2.5-flash`
-- `gemini-1.5-flash`
-- `gemini-1.5-pro`
+langchain_tool = StructuredTool.from_function(
+    func=tool.run,
+    name=tool.name,
+    description=tool.description
+)
+```
 
-**Error Handling**:
-- Custom exception: `GeminiAPIError`
-- Exponential backoff retry (3 attempts by default)
-- Logging for debugging
-- Text length validation (30,000 char limit)
+### Available Tools
+
+1. **video_scraper**: Scrape YouTube videos
+2. **summarizer**: Generate AI summaries
+3. **translator**: Translate text
+4. **topic_extractor**: Extract key topics
+
+Each tool provides:
+- Clear function signature
+- Input validation
+- Error handling
+- OpenAI-compatible schema
 
 ---
 
@@ -302,46 +494,41 @@ response = client.models.generate_content(
 
 ### Phase-Based Development
 
-The project follows a phased development approach:
-
 **Phase 1** (Completed):
 - Basic YouTube scraping
-- Multi-format output (TXT, JSON, XML, Markdown)
+- Multi-format output
 - Modular architecture
-- Comprehensive testing
 
-**Phase 2** (Current - Completed):
+**Phase 2** (Completed):
 - Playlist support
-- AI summarization (Gemini API)
-- Multi-language subtitle support
-- Translation capabilities
-- Topic extraction
-- Refactored to official Gemini API v1beta
+- AI features (Gemini API)
+- CLI with argparse
 
-**Future Phases**:
-- Web interface
-- Batch processing
-- Additional AI models
+**Phase 3** (Current - Completed):
+- FastAPI architecture
+- RESTful API
+- Agent-friendly tools
+- Service layer pattern
+- Comprehensive testing
 
 ### Branch Naming Convention
 
 ```
-claude/<feature-description>-<session-id>
+feature/<feature-description>-<session-id>
 ```
 
 Examples:
-- `claude/phase-2-core-features-01QUjqhTGM1GiY4RQGsY92bk`
-- `claude/add-multi-format-conversion`
+- `feature/fastapi-architecture-01EZhV9Zf6MNs7x4swCvdvAC`
+- `feature/add-caching-layer-ABC123XYZ`
 
-
-**IMPORTANT**: Session ID suffix is required for push operations (403 forbidden without it).
+**IMPORTANT**: Session ID suffix is required for push operations.
 
 ### Development Steps
 
 1. **Planning**: Use TodoWrite tool for multi-step tasks
-2. **Implementation**: Write code following existing patterns
-3. **Testing**: Achieve 80%+ coverage target
-4. **Documentation**: Update README.md and docstrings
+2. **Implementation**: Follow layered architecture
+3. **Testing**: Write tests for each layer
+4. **Documentation**: Update CLAUDE.md and docstrings
 5. **Commit**: Clear, descriptive commit messages
 6. **Push**: Use `git push -u origin <branch-name>` with retry logic
 
@@ -353,121 +540,66 @@ Examples:
 
 **Location**: `tests/` directory
 
-**Configuration**: `pytest.ini`
-```ini
-testpaths = tests
-python_files = test_*.py
-python_classes = Test*
-python_functions = test_*
+```
+tests/
+├── api/                # API endpoint tests
+│   ├── test_main.py
+│   ├── test_video_router.py
+│   ├── test_playlist_router.py
+│   └── test_ai_router.py
+├── core/               # Service layer tests
+│   ├── test_youtube_service.py
+│   ├── test_ai_service.py
+│   └── test_formatter_service.py
+└── tools/              # Tool tests
+    ├── test_video_scraper.py
+    ├── test_summarizer.py
+    ├── test_translator.py
+    └── test_topic_extractor.py
 ```
 
-### Test Organization
+### Running Tests
 
-Each test file follows this structure:
-```python
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-import sys
-
-# Mock external dependencies BEFORE importing module
-mock_external = MagicMock()
-sys.modules['external_lib'] = mock_external
-
-# Now import the module under test
-from module import ClassName, function
-
-class TestClassName:
-    """ClassName 테스트"""
-
-    def test_method_success(self):
-        """성공 케이스 테스트"""
-        ...
-
-    def test_method_failure(self):
-        """실패 케이스 테스트"""
-        ...
-```
-
-### Gemini API Testing Pattern
-
-**CRITICAL**: The Gemini API uses a new pattern that requires special mocking:
-
-```python
-# tests/test_gemini_api.py
-import sys
-from unittest.mock import MagicMock
-
-# Mock the new API structure BEFORE importing
-mock_genai_module = MagicMock()
-mock_types_module = MagicMock()
-mock_google = MagicMock()
-mock_google.genai = mock_genai_module
-mock_genai_module.types = mock_types_module
-
-sys.modules['google'] = mock_google
-sys.modules['google.genai'] = mock_genai_module
-sys.modules['google.genai.types'] = mock_types_module
-
-# Now safe to import
-from gemini_api import GeminiClient
-
-# In tests, mock the client
-mock_client = Mock()
-mock_genai_module.Client.return_value = mock_client
-mock_client.models.generate_content.return_value = mock_response
-```
-
-### Coverage Requirements
-
-**Target**: 80%+ coverage for all new modules
-
-**Running Tests**:
 ```bash
 # All tests
 python -m pytest tests/ -v
 
 # With coverage
-python -m pytest tests/ -v --cov=. --cov-report=term-missing
+python -m pytest tests/ -v --cov=api --cov=core --cov=tools --cov=api_main --cov-report=term-missing
 
 # Specific module
-python -m pytest tests/test_gemini_api.py -v --cov=gemini_api --cov-report=term-missing
+python -m pytest tests/api/test_main.py -v
+
+# FastAPI specific
+python -m pytest tests/api/ -v
 ```
 
-**Current Coverage** (as of last test):
-- `gemini_api.py`: 88% ✅
-- `playlist_handler.py`: 92% ✅
-- `formatters.py`: 77%
-- Overall: 63% (including legacy code)
-
-### Test Naming Conventions
+### FastAPI Testing Pattern
 
 ```python
-def test_<method_name>_<scenario>():
-    """<Korean description>"""
+from fastapi.testclient import TestClient
+from api_main import app
+
+client = TestClient(app)
+
+def test_endpoint():
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"
 ```
 
-Examples:
-- `test_initialization_with_api_key()`: "API 키로 초기화 테스트"
-- `test_make_api_call_retry()`: "API 호출 재시도 테스트"
-- `test_generate_summary_empty_transcript()`: "빈 자막으로 요약 생성 시 None 반환 테스트"
+### Coverage Requirements
 
-### Mocking Best Practices
+**Target**: 80%+ coverage for new modules
 
-1. **Mock external dependencies early** (before imports)
-2. **Use `patch.dict(os.environ, ...)` for environment variables**
-3. **Reset side_effects after tests** to avoid interference
-4. **Use descriptive mock return values** for clarity
+**Current Status** (Phase 3):
+- API schemas: 100%
+- API main: 66%
+- Core services: 22-56%
+- Tools: 43-44%
+- API routers: 25-61%
 
-Example:
-```python
-@patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'})
-def test_something(self):
-    mock_client = Mock()
-    mock_client.models.generate_content.return_value = Mock(text="Result")
-    ...
-    # Clean up
-    mock_client.models.generate_content.side_effect = None
-```
+**Note**: Legacy modules maintain existing coverage.
 
 ---
 
@@ -481,34 +613,32 @@ def test_something(self):
 <Detailed description>
 - Bullet point 1
 - Bullet point 2
-- ...
 ```
 
 **Types**:
 - `Refactor`: Code restructuring
-- `Implement`: New feature implementation
+- `Implement`: New feature
 - `Fix`: Bug fixes
 - `Update`: Documentation or minor updates
-- `Add`: Adding new files or functionality
+- `Add`: New files or functionality
 
 **Example**:
 ```
-Refactor gemini_api.py to use official Gemini API v1beta style
+Refactor: Implement FastAPI architecture with agent-friendly tools
 
-- Changed from google.generativeai to google.genai and google.genai.types imports
-- Updated client initialization to use genai.Client() instead of genai.GenerativeModel()
-- Modified API calls to use client.models.generate_content() pattern
-- Updated config to use types.GenerateContentConfig()
-- All gemini_api tests passing with 88% coverage (exceeds 80% target)
+- Created layered architecture (API, Core, Tools, Utils)
+- Implemented FastAPI with Pydantic v2 schemas
+- Added OpenAI function calling compatible tool schemas
+- Created comprehensive test suite
+- Updated documentation for Phase 3 architecture
 ```
 
 ### Git Operations with Retry Logic
 
 **Push Operations**:
 ```bash
-# CRITICAL: Branch must start with 'claude/' and end with session ID
-
-git push -u origin claude/feature-name-SESSION_ID
+# CRITICAL: Branch must start with 'feature/' and end with session ID
+git push -u origin feature/fastapi-architecture-SESSION_ID
 ```
 
 **Retry Logic** (for network failures):
@@ -516,257 +646,121 @@ git push -u origin claude/feature-name-SESSION_ID
 - Exponential backoff: 2s, 4s, 8s, 16s
 - Apply to: `git push`, `git fetch`, `git pull`
 
-**Never**:
-- Push to main/master without explicit permission
-- Use `git push --force` to main/master
-- Skip hooks (--no-verify) unless explicitly requested
-- Commit changes without user request
-
-### Branch Operations
-
-```bash
-# Create and switch to new branch
-git checkout -b claude/feature-name-SESSION_ID
-
-# Stage files
-git add file1.py file2.py
-
-# Commit with heredoc for formatting
-git commit -m "$(cat <<'EOF'
-Commit message here.
-
-- Detail 1
-- Detail 2
-EOF
-)"
-
-# Push with upstream tracking
-git push -u origin claude/feature-name-SESSION_ID
-```
-
 ---
 
 ## Code Style & Conventions
 
 ### Python Style
 
-**General**:
 - PEP 8 compliant
 - Type hints throughout
+- Pydantic v2 for data validation
+- Async/await for FastAPI endpoints
 - Docstrings for all public functions/classes
-- Korean comments for Korean-speaking team, English for public APIs
 
-**Example**:
+### FastAPI Conventions
+
 ```python
-def get_video_metadata(video_id: str) -> Dict:
+from fastapi import APIRouter, HTTPException
+from api.schemas.video import VideoRequest, VideoResponse
+
+router = APIRouter(prefix="/video", tags=["video"])
+
+@router.post("/info", response_model=VideoResponse)
+async def get_video_info(request: VideoRequest):
     """
-    비디오 메타데이터를 가져옵니다.
+    Endpoint description.
 
-    Args:
-        video_id: YouTube 비디오 ID
-
-    Returns:
-        메타데이터 딕셔너리
-
-    Raises:
-        Exception: 메타데이터 추출 실패 시
+    - **param1**: Description
+    - **param2**: Description
     """
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-    }
-    ...
+    try:
+        # Implementation
+        pass
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 ```
 
-### Docstrings
-
-**Module Level**:
-```python
-"""
-모듈 설명
-추가 설명이 필요한 경우 여기에 작성합니다.
-"""
-```
-
-**Function/Method Level**:
-```python
-def function_name(param1: Type1, param2: Type2 = default) -> ReturnType:
-    """
-    함수의 목적을 한 줄로 설명합니다.
-
-    Args:
-        param1: 첫 번째 파라미터 설명
-        param2: 두 번째 파라미터 설명 (기본값: default)
-
-    Returns:
-        반환값 설명
-
-    Raises:
-        ExceptionType: 예외 발생 조건
-    """
-```
-
-### Error Handling
-
-1. **Custom Exceptions** for domain-specific errors:
-   ```python
-   class GeminiAPIError(Exception):
-       """Gemini API 관련 커스텀 예외"""
-       pass
-   ```
-
-2. **Logging** instead of print statements (in production code):
-   ```python
-   import logging
-   logger = logging.getLogger(__name__)
-   logger.info("Processing video...")
-   logger.error(f"Failed to process: {e}")
-   ```
-
-3. **Graceful degradation** for optional features:
-   ```python
-   try:
-       summary = gemini_client.generate_summary(transcript)
-   except GeminiAPIError as e:
-       logger.warning(f"Summary generation failed: {e}")
-       summary = None  # Continue without summary
-   ```
-
-### Import Organization
+### Pydantic Models
 
 ```python
-# Standard library
-import sys
-import os
-from typing import Optional, List, Dict
+from pydantic import BaseModel, Field
 
-# Third-party
-import pytest
-from unittest.mock import Mock, patch
+class VideoRequest(BaseModel):
+    video_url: str = Field(..., description="YouTube video URL")
+    languages: List[str] = Field(default=["ko", "en"], description="Language priority")
 
-# Local modules
-from youtube_api import extract_video_id
-from formatters import get_formatter
-from gemini_api import GeminiClient
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "video_url": "https://youtube.com/watch?v=...",
+                "languages": ["ko", "en"]
+            }
+        }
 ```
 
 ---
 
 ## Common Tasks
 
-### Adding a New Output Formatter
+### Adding a New API Endpoint
 
-1. **Create formatter class** in `formatters.py`:
-   ```python
-   class CsvFormatter(Formatter):
-       def __init__(self):
-           super().__init__()
-           self.file_extension = "csv"
-           self.format_name = "CSV"
+1. **Create schema** in `api/schemas/`:
+```python
+class NewRequest(BaseModel):
+    param: str = Field(..., description="Description")
+```
 
-       def save(self, metadata, transcript, output_file,
-                summary=None, translation=None, key_topics=None) -> None:
-           # Implementation
-           pass
-   ```
+2. **Add router endpoint** in `api/routers/`:
+```python
+@router.post("/new-endpoint", response_model=NewResponse)
+async def new_endpoint(request: NewRequest):
+    # Implementation
+    pass
+```
 
-2. **Add to factory**:
-   ```python
-   def get_formatter(choice: str) -> Formatter:
-       formatters = {
-           '1': TxtFormatter,
-           '2': JsonFormatter,
-           '3': XmlFormatter,
-           '4': MarkdownFormatter,
-           '5': CsvFormatter,  # NEW
-       }
-       return formatters.get(choice, TxtFormatter)()
-   ```
+3. **Write tests** in `tests/api/`:
+```python
+def test_new_endpoint():
+    response = client.post("/new-endpoint", json={...})
+    assert response.status_code == 200
+```
 
-3. **Update available formatters**:
-   ```python
-   def get_available_formatters() -> List[str]:
-       return [
-           "1. 텍스트 (TXT)",
-           "2. JSON",
-           "3. XML",
-           "4. Markdown (MD)",
-           "5. CSV",  # NEW
-       ]
-   ```
+### Adding a New Agent Tool
 
-4. **Write tests** in `tests/test_formatters.py`:
-   ```python
-   class TestCsvFormatter:
-       def test_initialization(self):
-           formatter = CsvFormatter()
-           assert formatter.file_extension == "csv"
+1. **Create tool class** in `tools/`:
+```python
+class NewTool:
+    name = "new_tool"
+    description = "Tool description"
 
-       def test_save_creates_valid_csv(self, tmp_path):
-           # Test implementation
-           pass
-   ```
+    def run(self, **kwargs):
+        # Implementation
+        pass
 
-### Adding Gemini API Functionality
+    @staticmethod
+    def get_tool_schema():
+        return {...}  # OpenAI function calling schema
+```
 
-1. **Add method to `GeminiClient` class**:
-   ```python
-   def new_ai_feature(self, transcript: List[Dict],
-                      param: str = 'default') -> Optional[str]:
-       """
-       새로운 AI 기능 설명
+2. **Add to tools/__init__.py**
 
-       Args:
-           transcript: 자막 데이터
-           param: 파라미터 설명
+3. **Write tests**
 
-       Returns:
-           결과 문자열 또는 None
-       """
-       # Validate input
-       combined_text = self._combine_transcript_text(transcript)
-       if not combined_text:
-           return None
+4. **Register in api_main.py** (tool schemas endpoint)
 
-       # Create prompt
-       prompt = f"Your prompt here: {combined_text}"
+### Configuring Environment
 
-       # Make API call
-       return self._make_api_call(prompt, temperature=0.7)
-   ```
-
-2. **Add tests**:
-   ```python
-   @patch.dict(os.environ, {'GEMINI_API_KEY': 'test-key'})
-   def test_new_ai_feature_success(self):
-       mock_response = Mock()
-       mock_response.text = "AI response"
-       mock_client = Mock()
-       mock_client.models.generate_content.return_value = mock_response
-       mock_genai_module.Client.return_value = mock_client
-
-       client = GeminiClient()
-       result = client.new_ai_feature(transcript)
-
-       assert result == "AI response"
-   ```
-
-3. **Integrate in `main.py`** if needed
-
-### Updating Dependencies
-
-1. **Update `requirements.txt`**:
-   ```
-   new-package>=1.0.0
-   ```
-
-2. **Install and test**:
-   ```bash
-   pip install -r requirements.txt
-   python -m pytest tests/ -v
-   ```
-
-3. **Document in README.md** if user-facing
+Create `.env` file:
+```bash
+GEMINI_API_KEY=your_api_key_here
+GEMINI_MODEL_NAME=gemini-2.0-flash-exp
+API_HOST=0.0.0.0
+API_PORT=8000
+LOG_LEVEL=INFO
+```
 
 ---
 
@@ -774,73 +768,57 @@ from gemini_api import GeminiClient
 
 ### Common Issues
 
-#### 1. Gemini API Import Errors
+#### 1. FastAPI Import Errors
 
-**Problem**: `ModuleNotFoundError: No module named 'google.genai'`
+**Problem**: `ModuleNotFoundError: No module named 'fastapi'`
 
-**Solution**: Install correct package:
+**Solution**:
 ```bash
-pip install google-generativeai>=0.3.0
+pip install -r requirements.txt
 ```
 
-**Important**: The package name is `google-generativeai` but imports use `from google import genai`
+#### 2. Pydantic Validation Errors
 
-#### 2. Test Import Failures
+**Problem**: Request validation fails
 
-**Problem**: Tests fail with `pyo3_runtime.PanicException`
+**Solution**: Check request payload matches schema. View `/docs` for schema details.
 
-**Solution**: Mock the modules BEFORE importing:
+#### 3. CORS Issues
+
+**Problem**: Browser blocks API requests
+
+**Solution**: Configure CORS in `utils/config.py`:
 ```python
-# At top of test file, before imports
-mock_genai_module = MagicMock()
-sys.modules['google.genai'] = mock_genai_module
+cors_origins = ["http://localhost:3000", "..."]
 ```
 
-#### 3. YouTube Transcript API Issues
+#### 4. AI Service Unavailable
 
-**Problem**: Transcript extraction fails
+**Problem**: AI endpoints return 503
 
-**Solution**: See `ISSUE_TRANSCRIPT_API_FIX.md` for:
-- Version compatibility (0.x vs 1.x)
-- Language code issues
-- Manual vs auto-generated subtitle preferences
-
-#### 4. Coverage Not Meeting 80%
-
-**Steps**:
-1. Run coverage report to identify gaps:
-   ```bash
-   python -m pytest tests/test_module.py --cov=module --cov-report=term-missing
-   ```
-2. Look at "Missing" column for uncovered lines
-3. Add tests for:
-   - Error handling paths
-   - Edge cases (empty input, None values)
-   - Conditional branches
+**Solution**: Check `GEMINI_API_KEY` environment variable:
+```bash
+export GEMINI_API_KEY=your_key
+# or add to .env file
+```
 
 ### Debugging Tips
 
-1. **Enable logging**:
-   ```python
-   import logging
-   logging.basicConfig(level=logging.DEBUG)
-   ```
+1. **Check API logs**: FastAPI provides detailed request logs
 
-2. **Use pytest verbose mode**:
-   ```bash
-   python -m pytest tests/ -vv
-   ```
+2. **Use interactive docs**: Visit `/docs` to test endpoints
 
-3. **Run single test**:
-   ```bash
-   python -m pytest tests/test_file.py::TestClass::test_method -v
-   ```
+3. **Check health endpoints**:
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/ai/health
+```
 
-4. **Check test output**:
-   ```bash
-   python -m pytest tests/ -v --tb=short  # Short traceback
-   python -m pytest tests/ -v --tb=long   # Full traceback
-   ```
+4. **Enable debug logging**:
+```python
+# In api_main.py or .env
+LOG_LEVEL=DEBUG
+```
 
 ---
 
@@ -848,80 +826,82 @@ sys.modules['google.genai'] = mock_genai_module
 
 ### When Working with This Codebase
 
-1. **Always read existing code** before making changes
-   - Use Read tool to understand current implementation
-   - Check for similar patterns in codebase
+1. **Understand the layered architecture**
+   - API layer: Endpoints and validation
+   - Core layer: Business logic
+   - Tools layer: Agent-compatible interfaces
+   - Each layer has specific responsibilities
 
-2. **Follow existing patterns**
-   - Use Strategy Pattern for formatters
-   - Use dependency injection for testability
-   - Follow naming conventions (Korean comments + English code)
+2. **Follow FastAPI conventions**
+   - Use Pydantic models for validation
+   - Include docstrings with parameter descriptions
+   - Handle errors with HTTPException
+   - Write async functions for endpoints
 
-3. **Test-Driven Development**
-   - Write tests for new features
-   - Target 80%+ coverage
-   - Use mocking for external dependencies
+3. **Maintain backward compatibility**
+   - Legacy CLI (`main.py`) still works
+   - Legacy modules can coexist with new architecture
+   - API provides same functionality via HTTP
 
-4. **Document changes**
+4. **Test thoroughly**
+   - Write tests for each layer
+   - Use FastAPI TestClient for API tests
+   - Mock external dependencies
+   - Aim for 80%+ coverage
+
+5. **Document changes**
    - Update docstrings
-   - Update README.md for user-facing features
-   - Update this CLAUDE.md for architecture changes
-
-5. **Use TodoWrite for complex tasks**
-   - Break down multi-step tasks
-   - Track progress (pending, in_progress, completed)
-   - Mark tasks complete immediately after finishing
-
-6. **Git workflow**
-   - Commit with clear, descriptive messages
-   - Use heredoc for multi-line commit messages
-   - Push with retry logic for network failures
-   - Never force push to main/master
-
-7. **Handle API changes carefully**
-   - Read official documentation when provided
-   - Update mocks to match new API patterns
-   - Test thoroughly after refactoring
+   - Update CLAUDE.md for architecture changes
+   - Update README.md for user-facing changes
+   - Include examples in schemas
 
 ### Code Review Checklist
 
 Before committing, verify:
 
-- [ ] Code follows existing patterns
-- [ ] Type hints added for all functions
-- [ ] Docstrings present and accurate
+- [ ] Code follows layered architecture
+- [ ] Pydantic models have examples
+- [ ] API endpoints have proper error handling
 - [ ] Tests written and passing
-- [ ] Coverage ≥ 80% for new code
-- [ ] No security vulnerabilities (SQL injection, XSS, etc.)
-- [ ] Error handling implemented
-- [ ] Logging instead of print statements
-- [ ] README.md updated if needed
-- [ ] Commit message is clear and descriptive
+- [ ] Type hints present
+- [ ] Docstrings complete
+- [ ] No security vulnerabilities
+- [ ] CLAUDE.md updated if needed
+- [ ] OpenAPI docs look correct (`/docs`)
 
 ---
 
 ## Version History
 
-### Current State (2025-11-18)
+### Phase 3 (2025-11-18) - Current
 
-**Latest Commit**: `3fb94d7` - Refactor gemini_api.py to use official Gemini API v1beta style
+**Latest Changes**: FastAPI architecture implementation
 
-**Key Modules**:
-- `main.py`: 439 lines - Phase 2 CLI with argparse
-- `gemini_api.py`: 454 lines - Gemini API v1beta integration (88% coverage)
-- `formatters.py`: 402 lines - Strategy Pattern formatters (77% coverage)
-- `youtube_api.py`: 234 lines - YouTube API integration
-- `playlist_handler.py`: 191 lines - Playlist handling (92% coverage)
+**Key Additions**:
+- `api_main.py`: FastAPI application (210 lines)
+- `api/` directory: Routers and schemas
+- `core/` directory: Service layer
+- `tools/` directory: Agent-friendly tools
+- `utils/` directory: Configuration
+- Comprehensive test suite
+- OpenAPI documentation
+- Agent framework compatibility
 
-**Branch**: `claude/phase-2-core-features-01QUjqhTGM1GiY4RQGsY92bk`
+**Branch**: `feature/refactor-fastapi-architecture-01EZhV9Zf6MNs7x4swCvdvAC`
 
-**Test Coverage**: 46 tests passing for Phase 2 modules
+**Test Coverage**: 22 passing tests, API fully functional
+
+### Previous Phases
+
+See git history for Phase 1 and Phase 2 details.
 
 ---
 
 ## Contact & Resources
 
 - **Repository**: https://github.com/Rosin23/utube-script-scrapper
+- **API Documentation**: http://localhost:8000/docs (when running)
+- **Tool Schemas**: http://localhost:8000/tools/schemas
 - **Issues**: See ISSUE_TRANSCRIPT_API_FIX.md
 - **User Guide**: README.md
 

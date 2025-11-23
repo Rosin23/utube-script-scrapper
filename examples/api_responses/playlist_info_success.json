@@ -1,0 +1,73 @@
+{
+  "playlist_info": {
+    "playlist_id": "PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf",
+    "title": "Python Tutorial for Beginners",
+    "uploader": "Programming with Mosh",
+    "video_count": 45,
+    "description": "Learn Python programming from scratch with this comprehensive tutorial series. Perfect for beginners who want to learn Python step by step."
+  },
+  "videos": [
+    {
+      "video_id": "kqtD5dpn9C8",
+      "url": "https://www.youtube.com/watch?v=kqtD5dpn9C8",
+      "title": "Python Tutorial - Python for Beginners [Full Course]",
+      "index": 1
+    },
+    {
+      "video_id": "_uQrJ0TkZlc",
+      "url": "https://www.youtube.com/watch?v=_uQrJ0TkZlc",
+      "title": "Python Tutorial for Beginners 1: Install and Setup for Mac and Windows",
+      "index": 2
+    },
+    {
+      "video_id": "YYXdXT2l-Gg",
+      "url": "https://www.youtube.com/watch?v=YYXdXT2l-Gg",
+      "title": "Python Tutorial for Beginners 2: Strings - Working with Textual Data",
+      "index": 3
+    },
+    {
+      "video_id": "W8KRzm-HUcc",
+      "url": "https://www.youtube.com/watch?v=W8KRzm-HUcc",
+      "title": "Python Tutorial for Beginners 3: Integers and Floats - Working with Numeric Data",
+      "index": 4
+    },
+    {
+      "video_id": "daefaLgNkw0",
+      "url": "https://www.youtube.com/watch?v=daefaLgNkw0",
+      "title": "Python Tutorial for Beginners 4: Lists, Tuples, and Sets",
+      "index": 5
+    },
+    {
+      "video_id": "Lki-hYKM6vo",
+      "url": "https://www.youtube.com/watch?v=Lki-hYKM6vo",
+      "title": "Python Tutorial for Beginners 5: Dictionaries - Working with Key-Value Pairs",
+      "index": 6
+    },
+    {
+      "video_id": "Qgevy75co8c",
+      "url": "https://www.youtube.com/watch?v=Qgevy75co8c",
+      "title": "Python Tutorial for Beginners 6: Conditionals and Booleans - If, Else, and Elif Statements",
+      "index": 7
+    },
+    {
+      "video_id": "6iF8Xb7Z3wQ",
+      "url": "https://www.youtube.com/watch?v=6iF8Xb7Z3wQ",
+      "title": "Python Tutorial for Beginners 7: Loops and Iterations - For/While Loops",
+      "index": 8
+    },
+    {
+      "video_id": "NptnmWvkbTw",
+      "url": "https://www.youtube.com/watch?v=NptnmWvkbTw",
+      "title": "Python Tutorial for Beginners 8: Functions",
+      "index": 9
+    },
+    {
+      "video_id": "sugvnHA7ElY",
+      "url": "https://www.youtube.com/watch?v=sugvnHA7ElY",
+      "title": "Python Tutorial for Beginners 9: Import Modules and Exploring The Standard Library",
+      "index": 10
+    }
+  ],
+  "total_videos": 45,
+  "returned_videos": 10
+}

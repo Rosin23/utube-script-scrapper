@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "video_id": "jNQXAC9IVRw",
+    "title": "Me at the zoo",
+    "channel": "jawed",
+    "upload_date": "20050423",
+    "duration": 19,
+    "view_count": 280000000,
+    "like_count": 12000000,
+    "description": "The first video on YouTube. Maybe it's time to go back to the zoo?",
+    "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/maxresdefault.jpg"
+  },
+  "transcript": [
+    {
+      "start": 0.099,
+      "duration": 2.468,
+      "text": "All right, so here we are in front of the elephants,",
+      "timestamp": "00:00:00"
+    },
+    {
+      "start": 2.567,
+      "duration": 4.234,
+      "text": "and the cool thing about these guys is that they have really, really, really long trunks.",
+      "timestamp": "00:00:02"
+    },
+    {
+      "start": 6.801,
+      "duration": 2.0,
+      "text": "And that's cool.",
+      "timestamp": "00:00:06"
+    },
+    {
+      "start": 8.801,
+      "duration": 1.5,
+      "text": "And that's pretty much all there is to say.",
+      "timestamp": "00:00:08"
+    }
+  ],
+  "transcript_language": "en",
+  "summary": "1. The video is recorded at a zoo in front of elephant exhibits\n2. The narrator highlights elephants' distinctive long trunks as their most notable feature\n3. This is a brief, casual observation video with minimal commentary\n4. The tone is informal and conversational\n5. It represents one of YouTube's earliest uploaded videos",
+  "translation": "좋아요, 여기 코끼리 앞에 있습니다. 이 녀석들의 멋진 점은 정말, 정말, 정말 긴 코를 가지고 있다는 것입니다. 그리고 그것은 멋집니다. 그리고 그게 할 말의 전부입니다.",
+  "key_topics": [
+    "Zoo visit",
+    "Elephants",
+    "Animal observation",
+    "YouTube history",
+    "First video"
+  ],
+  "output_file": "output/Me_at_the_zoo_jNQXAC9IVRw.json"
+}

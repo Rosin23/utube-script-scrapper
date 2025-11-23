@@ -1,6 +1,6 @@
 """
 Gemini API 모듈
-Google Gemini API (v1beta)를 사용한 자막 요약 및 번역 기능을 제공합니다.
+Google Gemini API (google-genai 패키지)를 사용한 자막 요약 및 번역 기능을 제공합니다.
 공식 문서 기반으로 작성된 베스트 프랙티스 버전입니다.
 """
 
@@ -29,8 +29,8 @@ class GeminiAPIError(Exception):
 
 class GeminiClient:
     """
-    Gemini API 클라이언트 클래스 (v1beta 기반)
-
+    Gemini API 클라이언트 클래스 (google-genai 패키지 기반)
+    
     공식 Gemini API를 사용하여 텍스트 요약, 번역, 주제 추출을 수행합니다.
     """
 
@@ -78,7 +78,7 @@ class GeminiClient:
         if genai is None:
             raise GeminiAPIError(
                 "google-genai 패키지가 설치되지 않았습니다. "
-                "'pip install google-generativeai'로 설치하세요."
+                "'pip install google-genai'로 설치하세요."
             )
 
         # API 키 설정 (환경변수 우선순위: GEMINI_API_KEY > GOOGLE_API_KEY)
@@ -94,11 +94,10 @@ class GeminiClient:
         self.retry_count = retry_count
         self.retry_delay = retry_delay
 
-        # 클라이언트 초기화
+        # 클라이언트 초기화 (google-genai 패키지 방식)
         try:
-            # API 키를 환경변수로 설정 (Client()가 환경변수에서 읽음)
-            os.environ['GEMINI_API_KEY'] = self.api_key
-            self.client = genai.Client()
+            # API 키를 직접 전달하여 클라이언트 생성
+            self.client = genai.Client(api_key=self.api_key)
             logger.info(f"Gemini 클라이언트 초기화 완료 (모델: {self.model_name})")
         except Exception as e:
             raise GeminiAPIError(f"클라이언트 초기화 실패: {e}")
@@ -131,7 +130,7 @@ class GeminiClient:
         """
         for attempt in range(self.retry_count):
             try:
-                # 새로운 API 방식으로 호출
+                # google-genai 패키지의 새로운 API 방식
                 response = self.client.models.generate_content(
                     model=self.model_name,
                     contents=prompt,
@@ -141,7 +140,7 @@ class GeminiClient:
                 )
 
                 # 응답 검증
-                if not response or not response.text:
+                if not response or not hasattr(response, 'text') or not response.text:
                     logger.warning(f"빈 응답 수신 (시도 {attempt + 1}/{self.retry_count})")
                     continue
 
@@ -420,16 +419,25 @@ Topics:"""
             return None
 
 
-def is_gemini_available() -> bool:
+def is_gemini_available(api_key: Optional[str] = None) -> bool:
     """
     Gemini API가 사용 가능한지 확인합니다.
-
+    
+    Args:
+        api_key: API 키 (전달되면 이 키를 사용, None이면 환경 변수 확인)
+    
     Returns:
-        API 키가 설정되어 있고 SDK가 설치되어 있으면 True, 아니면 False
+        SDK가 설치되어 있고 API 키가 있으면 True, 아니면 False
     """
+    # SDK 확인
     if genai is None:
         return False
-
+    
+    # API 키 확인 (우선순위: 파라미터 > 환경 변수)
+    if api_key:
+        return True
+    
+    # 환경 변수 확인
     return bool(os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY'))
 
 
